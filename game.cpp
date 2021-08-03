@@ -1,38 +1,39 @@
 #include "./game.h"
 
 Game::Game () {
-	board[0 | (0 << 3)] = new Piece	(0 | (0 << 3), WHITE, ROOK);
-	board[0 | (1 << 3)] = new Piece	(0 | (1 << 3), WHITE, KNIGHT);
-	board[0 | (2 << 3)] = new Piece	(0 | (2 << 3), WHITE, BISHOP);
-	board[0 | (3 << 3)] = new Piece	(0 | (3 << 3), WHITE, QUEEN);
-	board[0 | (4 << 3)] = new Piece	(0 | (4 << 3), WHITE, KING);
-	board[0 | (5 << 3)] = new Piece	(0 | (5 << 3), WHITE, BISHOP);
-	board[0 | (6 << 3)] = new Piece	(0 | (6 << 3), WHITE, KNIGHT);
-	board[0 | (7 << 3)] = new Piece	(0 | (7 << 3), WHITE, ROOK);
+	board[(0 << 4) | (0 & 0xf)] = new Piece	((0 << 4) | (0 & 0xf), WHITE, ROOK);
+	board[(0 << 4) | (1 & 0xf)] = new Piece	((0 << 4) | (1 & 0xf), WHITE, KNIGHT);
+	board[(0 << 4) | (2 & 0xf)] = new Piece	((0 << 4) | (2 & 0xf), WHITE, BISHOP);
+	board[(0 << 4) | (3 & 0xf)] = new Piece	((0 << 4) | (3 & 0xf), WHITE, QUEEN);
+	board[(0 << 4) | (4 & 0xf)] = new Piece	((0 << 4) | (4 & 0xf), WHITE, KING);
+	board[(0 << 4) | (5 & 0xf)] = new Piece	((0 << 4) | (5 & 0xf), WHITE, BISHOP);
+	board[(0 << 4) | (6 & 0xf)] = new Piece	((0 << 4) | (6 & 0xf), WHITE, KNIGHT);
+	board[(0 << 4) | (7 & 0xf)] = new Piece	((0 << 4) | (7 & 0xf), WHITE, ROOK);
 
 	for (int i = 0; i < 8; i++) {
-		board[1 | (i << 3)] = new Piece (1 | (i << 3), WHITE, PAWN);
+		board[(1 << 4) | (i & 0xf)] = new Piece ((1 << 4) | (i & 0xf), WHITE, PAWN);
 	}
 
 	for (int i = 2; i < 6; i++) {
 		for (int j = 0; j < 8; j++) {
-			board[i | (j << 3)] = nullptr;
+			board[(i << 4) | (j & 0xf)] = nullptr;
 		}
 	}
 
 	for (int i = 0; i < 8; i++) {
-		board[6 | (i << 3)] = new Piece (6 | (i << 3), BLACK, PAWN);
+		board[(6 << 4) | (i & 0xf)] = new Piece ((1 << 4) | (i & 0xf), BLACK, PAWN);
 	}
     
-	board[7 | (0 << 3)] = new Piece (7 | (0 << 3), BLACK, ROOK);
-	board[7 | (1 << 3)] = new Piece (7 | (1 << 3), BLACK, KNIGHT);
-	board[7 | (2 << 3)] = new Piece (7 | (2 << 3), BLACK, BISHOP);
-	board[7 | (3 << 3)] = new Piece (7 | (3 << 3), BLACK, QUEEN);
-	board[7 | (4 << 3)] = new Piece (7 | (4 << 3), BLACK, KING);
-	board[7 | (5 << 3)] = new Piece (7 | (5 << 3), BLACK, BISHOP);
-	board[7 | (6 << 3)] = new Piece (7 | (6 << 3), BLACK, KNIGHT);
-	board[7 | (7 << 3)] = new Piece (7 | (7 << 3), BLACK, ROOK);
+	board[(7 << 4) | (0 & 0xf)] = new Piece ((7 << 4) | (0 & 0xf), BLACK, ROOK);
+	board[(7 << 4) | (1 & 0xf)] = new Piece ((7 << 4) | (1 & 0xf), BLACK, KNIGHT);
+	board[(7 << 4) | (2 & 0xf)] = new Piece ((7 << 4) | (2 & 0xf), BLACK, BISHOP);
+	board[(7 << 4) | (3 & 0xf)] = new Piece ((7 << 4) | (3 & 0xf), BLACK, QUEEN);
+	board[(7 << 4) | (4 & 0xf)] = new Piece ((7 << 4) | (4 & 0xf), BLACK, KING);
+	board[(7 << 4) | (5 & 0xf)] = new Piece ((7 << 4) | (5 & 0xf), BLACK, BISHOP);
+	board[(7 << 4) | (6 & 0xf)] = new Piece ((7 << 4) | (6 & 0xf), BLACK, KNIGHT);
+	board[(7 << 4) | (7 & 0xf)] = new Piece ((7 << 4) | (7 & 0xf), BLACK, ROOK);
 
+	turn = WHITE;
 	last_moved = -1;
 }
 
@@ -44,13 +45,14 @@ void Game::move_piece (int from, int to) {
 	board[from] = nullptr;
 }
 
+
 void Game::print_board () {
-	for (int i = 0; i < 8; i++) {
-		cout << "\t" << (8 - i) << "  |";
+	for (int i = 7; i >= 0; i--) {
+		cout << "\t" << (i + 1) << "  |";
 		for (int j = 0; j < 8; j++) {
 			cout << "\t";
-			if (board[(7 - i) | (j << 3)]) {
-				cout << pieces_repr[board[(7 - i) | (j << 3)]->get_type ()];
+			if (board[(i << 4) | (j & 0xf)]) {
+				cout << pieces_repr[board[(i << 4) | (j & 0xf)]->get_type ()];
 			}
 		}
 		if (i != 7) {

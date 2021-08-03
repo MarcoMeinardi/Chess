@@ -3,7 +3,7 @@
 #include <iostream>
 using namespace std;
 
-#include "./piece.h"
+#include "./bitboard.h"
 
 #define BISHOP	0
 #define KING	1
@@ -19,8 +19,10 @@ const string pieces_repr [6] = {"B", "K", "Kn", "P", "Q", "R"};
 
 class Game {
 private:
-	Piece* board[64];
+	BitBoard board;
+	int turn;
 	int last_moved;	// for en passant
+
 public:
 
 	Game ();
