@@ -1,11 +1,14 @@
 #include "./piece.h"
 
-Piece::Piece (int y_, int x_, int owner_, int type_) {
+Piece::Piece (int pos_, int owner_, int type_) {
     has_moved = false;
-    y = y_, x = x_;
+    pos = pos_;
     owner = owner_;
     type = type_;
-    just_moved = false;
+}
+
+int Piece::get_pos () {
+    return pos;
 }
 
 int Piece::get_type () {
@@ -16,14 +19,7 @@ int Piece::get_owner () {
     return owner;
 }
 
-void Piece::move (int y_, int x_) {
-    y = y_, x = x_;
-}
-
-bool Piece::has_just_moved () {
-    return just_moved;
-}
-
-void Piece::set_has_just_moved (bool actual) {
-    just_moved = actual;
+void Piece::move (int to) {
+    pos = to;
+    has_moved = true;
 }
