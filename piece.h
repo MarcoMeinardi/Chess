@@ -47,6 +47,14 @@ public:
 		return first_double_move;
 	}
 
+	inline void promote (int type_) {
+		type = type_;
+	}
+
+	inline void undo_promote () {
+		type = PAWN;
+	}
+
 	void move (int to) {
 		pos = to;
 		first_double_move = false;
