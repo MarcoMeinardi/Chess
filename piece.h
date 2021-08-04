@@ -27,6 +27,10 @@ public:
 		return pos;
 	}
 
+	inline void set_pos (int pos_) {
+		pos = pos_;
+	}
+
 	inline int get_type () {
 		return type;
 	}
