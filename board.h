@@ -2,7 +2,7 @@
 
 #include "./piece.h"
 
-class BitBoard {
+class Board {
 private:
     Piece* board[64];
 public:

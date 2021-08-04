@@ -16,12 +16,39 @@ private:
 	bool first_double_move; // for en passant
 
 public:
-	Piece (int pos_, int owner_, int type_);
-	int get_pos ();
-	int get_type ();
-	int get_owner ();
-	bool is_first_move ();
-	bool can_be_en_passant ();
+	Piece (int pos_, int owner_, int type_) {
+		has_moved = false;
+		pos = pos_;
+		owner = owner_;
+		type = type_;
+		first_double_move = false;
+	}
+	inline int get_pos () {
+		return pos;
+	}
 
-	void move (int to);
+	inline int get_type () {
+		return type;
+	}
+
+	inline int get_owner () {
+		return owner;
+	}
+
+	inline bool is_first_move () {
+		return !has_moved;
+	}
+
+	inline bool can_be_en_passant () {
+		return first_double_move;
+	}
+
+	void move (int to) {
+		pos = to;
+		first_double_move = false;
+		if (type == PAWN && to != pos + (1 << 4) && to != pos - (1 << 4)) {
+			first_double_move = true;
+		}
+		has_moved = true;
+	}
 };

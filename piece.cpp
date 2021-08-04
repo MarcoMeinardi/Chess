@@ -8,23 +8,23 @@ Piece::Piece (int pos_, int owner_, int type_) {
     first_double_move = false;
 }
 
-int Piece::get_pos () {
+inline int Piece::get_pos () {
     return pos;
 }
 
-int Piece::get_type () {
+inline int Piece::get_type () {
     return type;
 }
 
-int Piece::get_owner () {
+inline int Piece::get_owner () {
     return owner;
 }
 
-bool Piece::is_first_move () {
+inline bool Piece::is_first_move () {
     return !has_moved;
 }
 
-bool Piece::can_be_en_passant () {
+inline bool Piece::can_be_en_passant () {
     return first_double_move;
 }
 
