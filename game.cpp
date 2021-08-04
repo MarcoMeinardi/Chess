@@ -542,55 +542,67 @@ bool Game::checked_by_bishop_queen (int pos) {
 	Piece* P;
 
 	// rigth-up
-	p = pos + ((2 << 4) | (2 & 0xf));
-	while (!(p & 0b10001000)) {
-		P = board(p);
-		if (P) {
-			if (P->get_owner() != turn && (P->get_type() & (BISHOP | QUEEN))) {
-				return true;
-			}
-			break;
-		}
+	p = pos + ((1 << 4) | (1 & 0xf));
+	if (!(p & 0b10001000) && !board(p)) {
 		p += (1 << 4) | (1 & 0xf);
+		while (!(p & 0b10001000)) {
+			P = board(p);
+			if (P) {
+				if (P->get_owner() != turn && (P->get_type() & (BISHOP | QUEEN))) {
+					return true;
+				}
+				break;
+			}
+			p += (1 << 4) | (1 & 0xf);
+		}
 	}
 
 	// right-down
-	p = pos + (-(2 << 4) | (2 & 0xf));
-	while (!(p & 0b10001000)) {
-		P = board(p);
-		if (P) {
-			if (P->get_owner() != turn && (P->get_type() & (BISHOP | QUEEN))) {
-				return true;
-			}
-			break;
-		}
+	p = pos + (-(1 << 4) | (1 & 0xf));
+	if (!(p & 0b10001000) && !board(p)) {
 		p += -(1 << 4) | (1 & 0xf);
+			while (!(p & 0b10001000)) {
+			P = board(p);
+			if (P) {
+				if (P->get_owner() != turn && (P->get_type() & (BISHOP | QUEEN))) {
+					return true;
+				}
+				break;
+			}
+			p += -(1 << 4) | (1 & 0xf);
+		}
 	}
 
 	// left-down
-	p = pos + (-(2 << 4) - (2 & 0xf));
-	while (!(p & 0b10001000)) {
-		P = board(p);
-		if (P) {
-			if (P->get_owner() != turn && (P->get_type() & (BISHOP | QUEEN))) {
-				return true;
-			}
-			break;
-		}
+	p = pos + (-(1 << 4) - (1 & 0xf));
+	if (!(p & 0b10001000) && !board(p)) {
 		p += -(1 << 4) - (1 & 0xf);
+		while (!(p & 0b10001000)) {
+			P = board(p);
+			if (P) {
+				if (P->get_owner() != turn && (P->get_type() & (BISHOP | QUEEN))) {
+					return true;
+				}
+				break;
+			}
+			p += -(1 << 4) - (1 & 0xf);
+		}
 	}
 
 	// left-up
-	p = pos + ((2 << 4) - (2 & 0xf));
-	while (!(p & 0b10001000)) {
-		P = board(p);
-		if (P) {
-			if (P->get_owner() != turn && (P->get_type() & (BISHOP | QUEEN))) {
-				return true;
-			}
-			break;
-		}
+	p = pos + ((1 << 4) - (1 & 0xf));
+	if (!(p & 0b10001000) && !board(p)) {
 		p += (1 << 4) - (1 & 0xf);
+		while (!(p & 0b10001000)) {
+			P = board(p);
+			if (P) {
+				if (P->get_owner() != turn && (P->get_type() & (BISHOP | QUEEN))) {
+					return true;
+				}
+				break;
+			}
+			p += (1 << 4) - (1 & 0xf);
+		}
 	}
 
 	return false;
@@ -600,55 +612,67 @@ bool Game::checked_by_rook_queen (int pos) {
 	Piece* P;
 
 	// up
-	p = pos + (2 << 4);
-	while (!(p & 0b10001000)) {
-		P = board(p);
-		if (P) {
-			if (P->get_owner() != turn && (P->get_type() & (ROOK | QUEEN))) {
-				return true;
-			}
-			break;
-		}
+	p = pos + (1 << 4);
+	if (!(p & 0b10001000) && !board(p)) {
 		p += (1 << 4);
+		while (!(p & 0b10001000)) {
+			P = board(p);
+			if (P) {
+				if (P->get_owner() != turn && (P->get_type() & (ROOK | QUEEN))) {
+					return true;
+				}
+				break;
+			}
+			p += (1 << 4);
+		}
 	}
 
 	// right
-	p = pos + (2 & 0xf);
-	while (!(p & 0b10001000)) {
-		P = board(p);
-		if (P) {
-			if (P->get_owner() != turn && (P->get_type() & (ROOK | QUEEN))) {
-				return true;
-			}
-			break;
-		}
+	p = pos + (1 & 0xf);
+	if (!(p & 0b10001000) && !board(p)) {
 		p += (1 & 0xf);
+		while (!(p & 0b10001000)) {
+			P = board(p);
+			if (P) {
+				if (P->get_owner() != turn && (P->get_type() & (ROOK | QUEEN))) {
+					return true;
+				}
+				break;
+			}
+			p += (1 & 0xf);
+		}
 	}
 
 	// down
-	p = pos - (2 << 4);
-	while (!(p & 0b10001000)) {
-		P = board(p);
-		if (P) {
-			if (P->get_owner() != turn && (P->get_type() & (ROOK | QUEEN))) {
-				return true;
-			}
-			break;
-		}
+	p = pos - (1 << 4);
+	if (!(p & 0b10001000) && !board(p)) {
 		p -= (1 << 4);
+		while (!(p & 0b10001000)) {
+			P = board(p);
+			if (P) {
+				if (P->get_owner() != turn && (P->get_type() & (ROOK | QUEEN))) {
+					return true;
+				}
+				break;
+			}
+			p -= (1 << 4);
+		}
 	}
 
 	// left
-	p = pos - (2 & 0xf);
-	while (!(p & 0b10001000)) {
-		P = board(p);
-		if (P) {
-			if (P->get_owner() != turn && (P->get_type() & (ROOK | QUEEN))) {
-				return true;
-			}
-			break;
-		}
+	p = pos - (1 & 0xf);
+	if (!(p & 0b10001000) && !board(p)) {
 		p -= (1 & 0xf);
+		while (!(p & 0b10001000)) {
+			P = board(p);
+			if (P) {
+				if (P->get_owner() != turn && (P->get_type() & (ROOK | QUEEN))) {
+					return true;
+				}
+				break;
+			}
+			p -= (1 & 0xf);
+		}
 	}
 
 	return false;

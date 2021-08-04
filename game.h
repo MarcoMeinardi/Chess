@@ -16,7 +16,7 @@ private:
 	int turn;
 	int last_moved;	// for en passant
 
-	int moves[100];
+	int moves[128];
 	int n_moves;
 
 	bool is_checkmate;
