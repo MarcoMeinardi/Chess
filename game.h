@@ -1,6 +1,8 @@
 #pragma once
 
 #include <iostream>
+#include <cstdlib>
+#include <ctime>
 using namespace std;
 
 #include "./board.h"
@@ -27,6 +29,7 @@ private:
 public:
 
 	Game ();
+	~Game ();
 	void move_piece (int from, int to);
 	void load_moves ();
 	void add_move (int from, int to, Piece* eaten);
@@ -48,5 +51,7 @@ public:
 	void print_board ();
 	void print_possible_moves();
 	void human_move (string move);
+
+	int test ();
 };
 

@@ -42,6 +42,13 @@ Game::Game () {
 	kings[WHITE] = board [(0 << 3) | (4 & 0x7)];
 	kings[BLACK] = board [(7 << 3) | (4 & 0x7)];
 }
+Game::~Game () {
+	for (int i = 0; i < 64; i++) {
+		if (board[i]) {
+			free (board[i]);
+		}
+	}
+}
 
 void Game::move_piece (int from, int to) {
 	turn ^= 1;
@@ -73,6 +80,7 @@ void Game::move_piece (int from, int to) {
 	// en passant
 	if (board(from)->get_type () == PAWN && (from & 0x7) != (to & 0x7) && !board(to & 0xff)) {
 		free (board[(from >> 4) | (to & 0x7)]);
+		board[(from >> 4) | (to & 0x7)] = nullptr;
 	}
 
 	if (to >> 8) {
@@ -932,7 +940,7 @@ void Game::print_board () {
 			cout << "\t";
 			if (board[(i << 3) | (j & 0x7)]) {
 				cout << pieces_repr[board[(i << 3) | (j & 0x7)]->get_type ()];
-				
+				cout << (board[(i << 3) | (j & 0x7)]->get_owner () == WHITE ? 'W' : 'B');
 			}
 		}
 		if (i != 0) {
@@ -992,4 +1000,20 @@ void Game::human_move (string move) {	// "a1 h8x"
 	}
 
 	move_piece ((from_row << 4) | (from_col & 0xf), (to_row << 4) | (to_col & 0xf) | (new_type << 8));
+}
+
+int Game::test () {
+	int cnt = 0;
+	int move;
+	while (cnt < 10'000) {
+		load_moves ();
+		if (is_checkmate || is_draw) {
+			break;
+		}
+		move = moves[rand () % n_moves];
+		move_piece (move & 0xff, move >> 8);
+		cnt++;
+	}
+
+	return cnt | (turn << 29) | (is_checkmate << 30) | (is_draw << 31);
 }
