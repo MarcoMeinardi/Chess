@@ -36,6 +36,8 @@ Game::Game () {
 	turn = WHITE;
 	last_moved = -1;
 
+	moves_without_take_or_pawn_move = 0;
+
 	is_checkmate = false;
 	is_draw = false;
 
@@ -51,6 +53,7 @@ Game::~Game () {
 }
 
 void Game::move_piece (int from, int to) {
+	moves_without_take_or_pawn_move++;
 	turn ^= 1;
 	last_moved = to & 0xff;
 
@@ -87,12 +90,21 @@ void Game::move_piece (int from, int to) {
 		board(from)->promote (to >> 8);
 	}
 
+	if (board(from)->get_type () == PAWN) {
+		moves_without_take_or_pawn_move = 0;
+	}
+
 	if (board(to & 0xff)) {
 		free (board(to & 0xff));
+		moves_without_take_or_pawn_move = 0;
 	}
 	board(from)->move (to & 0xff);
 	board(to & 0xff) = board(from);
 	board(from) = nullptr;
+
+	if (moves_without_take_or_pawn_move == 50) {
+		is_draw = true;
+	}
 }
 void Game::load_moves () {
 	n_moves = 0;
@@ -1007,9 +1019,7 @@ int Game::test () {
 	int move;
 	
 	while (cnt < 10'000) {
-		// print_board ();
 		load_moves ();
-		// print_possible_moves ();
 		if (is_checkmate || is_draw) {
 			break;
 		}

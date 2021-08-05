@@ -21,6 +21,8 @@ private:
 	int moves[128];
 	int n_moves;
 
+	int moves_without_take_or_pawn_move;
+
 	bool is_checkmate;
 	bool is_draw;
 
