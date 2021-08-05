@@ -36,6 +36,8 @@ Game::Game () {
 	turn = WHITE;
 	last_moved = -1;
 
+	remaining_pieces[WHITE] = 16;
+	remaining_pieces[BLACK] = 16;
 	moves_without_take_or_pawn_move = 0;
 
 	is_checkmate = false;
@@ -84,6 +86,7 @@ void Game::move_piece (int from, int to) {
 	if (board(from)->get_type () == PAWN && (from & 0x7) != (to & 0x7) && !board(to & 0xff)) {
 		free (board[(from >> 4) | (to & 0x7)]);
 		board[(from >> 4) | (to & 0x7)] = nullptr;
+		remaining_pieces[turn]--;
 	}
 
 	if (to >> 8) {
@@ -97,6 +100,8 @@ void Game::move_piece (int from, int to) {
 	if (board(to & 0xff)) {
 		free (board(to & 0xff));
 		moves_without_take_or_pawn_move = 0;
+		remaining_pieces[turn]--;
+		check_draw ();
 	}
 	board(from)->move (to & 0xff);
 	board(to & 0xff) = board(from);
@@ -106,34 +111,36 @@ void Game::move_piece (int from, int to) {
 		is_draw = true;
 	}
 }
-void Game::load_moves () {
-	n_moves = 0;
+int Game::load_moves (int* moves) {
+	int* original_moves = moves;
+	int n_moves;
 
 	for (int i = 0; i < 64; i++) {	// y = i >> 3, x = i & 0x7
 		if (board[i] && board[i]->get_owner () == turn) {
 			switch (board[i]->get_type ()) {
 			case BISHOP:
-				get_bishop_moves (((i << 1) & 0b1110000) | (i & 0b111));
+				get_bishop_moves (((i << 1) & 0b1110000) | (i & 0b111), moves);
 				break;
 			case KING:
-				get_king_moves (((i << 1) & 0b1110000) | (i & 0b111));
+				get_king_moves (((i << 1) & 0b1110000) | (i & 0b111), moves);
 				break;
 			case KNIGHT:
-				get_knight_moves (((i << 1) & 0b1110000) | (i & 0b111));
+				get_knight_moves (((i << 1) & 0b1110000) | (i & 0b111), moves);
 				break;
 			case PAWN:
-				get_pawn_moves (((i << 1) & 0b1110000) | (i & 0b111));
+				get_pawn_moves (((i << 1) & 0b1110000) | (i & 0b111), moves);
 				break;
 			case QUEEN:
-				get_queen_moves (((i << 1) & 0b1110000) | (i & 0b111));
+				get_queen_moves (((i << 1) & 0b1110000) | (i & 0b111), moves);
 				break;
 			case ROOK:
-				get_rook_moves (((i << 1) & 0b1110000) | (i & 0b111));
+				get_rook_moves (((i << 1) & 0b1110000) | (i & 0b111), moves);
 				break;
 			}
 		}
 	}
 
+	n_moves = moves - original_moves;
 	if (n_moves == 0) {
 		if (is_check (kings[turn]->get_pos ())) {
 			is_checkmate = true;
@@ -141,8 +148,9 @@ void Game::load_moves () {
 			is_draw = true;
 		}
 	}
+	return n_moves;
 }
-void Game::add_move (int from, int to, Piece* eaten = nullptr) {
+void Game::add_move (int from, int to, int*& moves, Piece* eaten = nullptr) {
 	// simulate move
 	if (eaten) {
 		board(eaten->get_pos ()) = nullptr;
@@ -156,7 +164,7 @@ void Game::add_move (int from, int to, Piece* eaten = nullptr) {
 	board(from) = nullptr;
 
 	if (!is_check (kings[turn]->get_pos ())) {
-		moves[n_moves++] = from | (to << 8);
+		*(moves++) = from | (to << 8);
 	}
 
 	// undo move
@@ -180,8 +188,40 @@ bool Game::is_check (int pos) {
 
 	return false;
 }
+void Game::check_draw () {
+	if (remaining_pieces[WHITE] > 1 && remaining_pieces[BLACK] > 1) {
+		return;
+	}
+	if (remaining_pieces[WHITE] == 1 && remaining_pieces[BLACK] == 1) {
+		is_draw = true;
+		return;
+	}
 
-void Game::get_bishop_moves (int pos) {
+	Piece* P;
+	if (remaining_pieces[WHITE] == 2) {
+		for (int i = 0; i < 64; i++) {
+			P = board[i];
+			if (P && P->get_owner () == WHITE) {
+				if (P->get_type () & (BISHOP | KNIGHT)) {
+					is_draw = true;
+					return;
+				}
+			}
+		}
+	} else {
+		for (int i = 0; i < 64; i++) {
+			P = board[i];
+			if (P && P->get_owner () == BLACK) {
+				if (P->get_type () & (BISHOP | KNIGHT)) {
+					is_draw = true;
+					return;
+				}
+			}
+		}
+	}
+}
+
+void Game::get_bishop_moves (int pos, int*& moves) {
 	int p;
 	Piece* P;
 
@@ -191,11 +231,11 @@ void Game::get_bishop_moves (int pos) {
 		P = board(p);
 		if (P) {
 			if (P->get_owner () != turn) {
-				add_move (pos, p, P);
+				add_move (pos, p, moves, P);
 			}
 			break;
 		}
-		add_move (pos, p);
+		add_move (pos, p, moves);
 		p += (1 << 4) | (1 & 0xf);
 	}
 
@@ -205,11 +245,11 @@ void Game::get_bishop_moves (int pos) {
 		P = board (p);
 		if (P) {
 			if (P->get_owner () != turn) {
-				add_move (pos, p, P);
+				add_move (pos, p, moves, P);
 			}
 			break;
 		}
-		add_move (pos, p);
+		add_move (pos, p, moves);
 		p += -(1 << 4) | (1 & 0xf);
 	}
 
@@ -219,11 +259,11 @@ void Game::get_bishop_moves (int pos) {
 		P = board (p);
 		if (P) {
 			if (P->get_owner () != turn) {
-				add_move (pos, p, P);
+				add_move (pos, p, moves, P);
 			}
 			break;
 		}
-		add_move (pos, p);
+		add_move (pos, p, moves);
 		p += -(1 << 4) - (1 & 0xf);
 	}
 
@@ -233,15 +273,15 @@ void Game::get_bishop_moves (int pos) {
 		P = board(p);
 		if (P) {
 			if (P->get_owner () != turn) {
-				add_move (pos, p, P);
+				add_move (pos, p, moves, P);
 			}
 			break;
 		}
-		add_move (pos, p);
+		add_move (pos, p, moves);
 		p += (1 << 4) - (1 & 0xf);
 	}
 }
-void Game::get_king_moves (int pos) {
+void Game::get_king_moves (int pos, int*& moves) {
 	int p;
 	Piece* P;
 
@@ -250,7 +290,7 @@ void Game::get_king_moves (int pos) {
 	if (!(p & 0b10001000)) {
 		P = board(p);
 		if (!P || P->get_owner () != turn) {
-			add_move (pos, p, P);
+			add_move (pos, p, moves, P);
 		}
 	}
 
@@ -259,7 +299,7 @@ void Game::get_king_moves (int pos) {
 	if (!(p & 0b10001000)) {
 		P = board(p);
 		if (!P || P->get_owner () != turn) {
-			add_move (pos, p, P);
+			add_move (pos, p, moves, P);
 		}
 	}
 
@@ -268,7 +308,7 @@ void Game::get_king_moves (int pos) {
 	if (!(p & 0b10001000)) {
 		P = board(p);
 		if (!P || P->get_owner () != turn) {
-			add_move (pos, p, P);
+			add_move (pos, p, moves, P);
 		}
 	}
 
@@ -277,7 +317,7 @@ void Game::get_king_moves (int pos) {
 	if (!(p & 0b10001000)) {
 		P = board(p);
 		if (!P || P->get_owner () != turn) {
-			add_move (pos, p, P);
+			add_move (pos, p, moves, P);
 		}
 	}
 
@@ -286,7 +326,7 @@ void Game::get_king_moves (int pos) {
 	if (!(p & 0b10001000)) {
 		P = board(p);
 		if (!P || P->get_owner () != turn) {
-			add_move (pos, p, P);
+			add_move (pos, p, moves, P);
 		}
 	}
 
@@ -295,7 +335,7 @@ void Game::get_king_moves (int pos) {
 	if (!(p & 0b10001000)) {
 		P = board(p);
 		if (!P || P->get_owner () != turn) {
-			add_move (pos, p, P);
+			add_move (pos, p, moves, P);
 		}
 	}
 
@@ -304,7 +344,7 @@ void Game::get_king_moves (int pos) {
 	if (!(p & 0b10001000)) {
 		P = board(p);
 		if (!P || P->get_owner () != turn) {
-			add_move (pos, p, P);
+			add_move (pos, p, moves, P);
 		}
 	}
 
@@ -313,7 +353,7 @@ void Game::get_king_moves (int pos) {
 	if (!(p & 0b10001000)) {
 		P = board(p);
 		if (!P || P->get_owner () != turn) {
-			add_move (pos, p, P);
+			add_move (pos, p, moves, P);
 		}
 	}
 
@@ -321,12 +361,8 @@ void Game::get_king_moves (int pos) {
 	if (board(pos)->is_first_move () && !board(pos + 1) && !board(pos + 2)) {
 		P = board(pos + 3);
 		if (P && P->get_type () == ROOK && P->is_first_move()) {
-			if (
-				!is_check (pos) && 
-				!is_check (pos + 1) && 
-				!is_check (pos + 3)
-			) {
-				add_move (pos, pos + 2);
+			if (!is_check (pos) && !is_check (pos + 1)) {
+				add_move (pos, pos + 2, moves);
 			}
 		}
 	}
@@ -334,18 +370,13 @@ void Game::get_king_moves (int pos) {
 	if (board(pos)->is_first_move () && !board(pos - 1) && !board(pos - 2) && !board(pos - 3)) {
 		P = board(pos - 4);
 		if (P && P->get_type () == ROOK && P->is_first_move()) {
-			if (
-				!is_check (pos) && 
-				!is_check (pos - 1) &&
-				!is_check (pos - 3) && 
-				!is_check (pos - 4)
-			) {
-				add_move (pos, pos - 2);
+			if (!is_check (pos) && !is_check (pos - 1)) {
+				add_move (pos, pos - 2, moves);
 			}
 		}
 	}
 }
-void Game::get_knight_moves (int pos) {
+void Game::get_knight_moves (int pos, int*& moves) {
 	int p;
 	Piece* P;
 
@@ -354,7 +385,7 @@ void Game::get_knight_moves (int pos) {
 	if (!(p & 0b10001000)) {
 		P = board(p);
 		if (!P || P->get_owner () != turn) {
-			add_move (pos, p, P);
+			add_move (pos, p, moves, P);
 		}
 	}
 
@@ -363,7 +394,7 @@ void Game::get_knight_moves (int pos) {
 	if (!(p & 0b10001000)) {
 		P = board(p);
 		if (!P || P->get_owner () != turn) {
-			add_move (pos, p, P);
+			add_move (pos, p, moves, P);
 		}
 	}
 
@@ -372,7 +403,7 @@ void Game::get_knight_moves (int pos) {
 	if (!(p & 0b10001000)) {
 		P = board(p);
 		if (!P || P->get_owner () != turn) {
-			add_move (pos, p, P);
+			add_move (pos, p, moves, P);
 		}
 	}
 
@@ -381,7 +412,7 @@ void Game::get_knight_moves (int pos) {
 	if (!(p & 0b10001000)) {
 		P = board(p);
 		if (!P || P->get_owner () != turn) {
-			add_move (pos, p, P);
+			add_move (pos, p, moves, P);
 		}
 	}
 
@@ -390,7 +421,7 @@ void Game::get_knight_moves (int pos) {
 	if (!(p & 0b10001000)) {
 		P = board(p);
 		if (!P || P->get_owner () != turn) {
-			add_move (pos, p, P);
+			add_move (pos, p, moves, P);
 		}
 	}
 
@@ -399,7 +430,7 @@ void Game::get_knight_moves (int pos) {
 	if (!(p & 0b10001000)) {
 		P = board(p);
 		if (!P || P->get_owner () != turn) {
-			add_move (pos, p, P);
+			add_move (pos, p, moves, P);
 		}
 	}
 
@@ -408,7 +439,7 @@ void Game::get_knight_moves (int pos) {
 	if (!(p & 0b10001000)) {
 		P = board(p);
 		if (!P || P->get_owner () != turn) {
-			add_move (pos, p, P);
+			add_move (pos, p, moves, P);
 		}
 	}
 
@@ -417,11 +448,11 @@ void Game::get_knight_moves (int pos) {
 	if (!(p & 0b10001000)) {
 		P = board(p);
 		if (!P || P->get_owner () != turn) {
-			add_move (pos, p, P);
+			add_move (pos, p, moves, P);
 		}
 	}
 }
-void Game::get_pawn_moves (int pos) {
+void Game::get_pawn_moves (int pos, int*& moves) {
 	int p;
 	Piece* P;
 	if (turn == WHITE) {
@@ -429,15 +460,15 @@ void Game::get_pawn_moves (int pos) {
 		p = pos + (1 << 4);
 		if (!(p & 0b10001000) && !board(p)) {
 			if ((p >> 4) == 7) {
-				add_move (pos, p | (QUEEN << 8));
-				add_move (pos, p | (KNIGHT << 8));
-				add_move (pos, p | (ROOK << 8));
-				add_move (pos, p | (BISHOP << 8));
+				add_move (pos, p | (QUEEN << 8), moves);
+				add_move (pos, p | (KNIGHT << 8), moves);
+				add_move (pos, p | (ROOK << 8), moves);
+				add_move (pos, p | (BISHOP << 8), moves);
 			} else {
-				add_move (pos, p);
+				add_move (pos, p, moves);
 				p += (1 << 4);
 				if (board(pos)->is_first_move () && !board(p)) {
-					add_move (pos, p);	
+					add_move (pos, p, moves);	
 				}
 			}
 		}
@@ -448,12 +479,12 @@ void Game::get_pawn_moves (int pos) {
 			P = board(p);
 			if (P && P->get_owner () == BLACK) {
 				if ((p >> 4) == 7) {
-					add_move (pos, p | (QUEEN << 8), P);
-					add_move (pos, p | (KNIGHT << 8), P);
-					add_move (pos, p | (ROOK << 8), P);
-					add_move (pos, p | (BISHOP << 8), P);
+					add_move (pos, p | (QUEEN << 8), moves, P);
+					add_move (pos, p | (KNIGHT << 8), moves, P);
+					add_move (pos, p | (ROOK << 8), moves, P);
+					add_move (pos, p | (BISHOP << 8), moves, P);
 				} else {
-					add_move (pos, p, P);
+					add_move (pos, p, moves, P);
 				}
 			}
 		}
@@ -462,12 +493,12 @@ void Game::get_pawn_moves (int pos) {
 			P = board(p);
 			if (P && P->get_owner () == BLACK) {
 				if ((p >> 4) == 7) {
-					add_move (pos, p | (QUEEN << 8), P);
-					add_move (pos, p | (KNIGHT << 8), P);
-					add_move (pos, p | (ROOK << 8), P);
-					add_move (pos, p | (BISHOP << 8), P);
+					add_move (pos, p | (QUEEN << 8), moves, P);
+					add_move (pos, p | (KNIGHT << 8), moves, P);
+					add_move (pos, p | (ROOK << 8), moves, P);
+					add_move (pos, p | (BISHOP << 8), moves, P);
 				} else {
-					add_move (pos, p, P);
+					add_move (pos, p, moves, P);
 				}
 			}
 		}
@@ -476,12 +507,12 @@ void Game::get_pawn_moves (int pos) {
 		if (last_moved == pos + 1) {
 			P = board(last_moved);
 			if (P->get_owner () == BLACK && P->can_be_en_passant ()) {
-				add_move (pos, pos + ((1 << 4) | 1), P);
+				add_move (pos, pos + ((1 << 4) | 1), moves, P);
 			}
 		} else if (last_moved == pos - 1) {
 			P = board(last_moved);
 			if (P->get_owner () == BLACK && P->can_be_en_passant ()) {
-				add_move (pos, pos + ((1 << 4) - 1), P);
+				add_move (pos, pos + ((1 << 4) - 1), moves, P);
 			}
 		}
 	} else {
@@ -489,15 +520,15 @@ void Game::get_pawn_moves (int pos) {
 		p = pos - (1 << 4);
 		if (!(p & 0b10001000) && !board(p)) {
 			if ((p >> 4) == 0) {
-				add_move (pos, p | (QUEEN << 8));
-				add_move (pos, p | (KNIGHT << 8));
-				add_move (pos, p | (ROOK << 8));
-				add_move (pos, p | (BISHOP << 8));
+				add_move (pos, p | (QUEEN << 8), moves);
+				add_move (pos, p | (KNIGHT << 8), moves);
+				add_move (pos, p | (ROOK << 8), moves);
+				add_move (pos, p | (BISHOP << 8), moves);
 			} else {
-				add_move (pos, p);
+				add_move (pos, p, moves);
 				p -= (1 << 4);
 				if (board(pos)->is_first_move () && !board(p)) {
-					add_move (pos, p);
+					add_move (pos, p, moves);
 				}
 			}
 		}
@@ -508,12 +539,12 @@ void Game::get_pawn_moves (int pos) {
 			P = board (p);
 			if (P && P->get_owner () == WHITE) {
 				if ((p >> 4) == 0) {
-					add_move (pos, p | (QUEEN << 8), P);
-					add_move (pos, p | (KNIGHT << 8), P);
-					add_move (pos, p | (ROOK << 8), P);
-					add_move (pos, p | (BISHOP << 8), P);
+					add_move (pos, p | (QUEEN << 8), moves, P);
+					add_move (pos, p | (KNIGHT << 8), moves, P);
+					add_move (pos, p | (ROOK << 8), moves, P);
+					add_move (pos, p | (BISHOP << 8), moves, P);
 				} else {
-					add_move (pos, p, P);
+					add_move (pos, p, moves, P);
 				}
 			}
 		}
@@ -522,12 +553,12 @@ void Game::get_pawn_moves (int pos) {
 			P = board (p);
 			if (P && P->get_owner () == WHITE) {
 				if ((p >> 4) == 0) {
-					add_move (pos, p | (QUEEN << 8), P);
-					add_move (pos, p | (KNIGHT << 8), P);
-					add_move (pos, p | (ROOK << 8), P);
-					add_move (pos, p | (BISHOP << 8), P);
+					add_move (pos, p | (QUEEN << 8), moves, P);
+					add_move (pos, p | (KNIGHT << 8), moves, P);
+					add_move (pos, p | (ROOK << 8), moves, P);
+					add_move (pos, p | (BISHOP << 8), moves, P);
 				} else {
-					add_move (pos, p, P);
+					add_move (pos, p, moves, P);
 				}
 			}
 		}
@@ -536,21 +567,21 @@ void Game::get_pawn_moves (int pos) {
 		if (last_moved == pos + 1) {
 			P = board(last_moved);
 			if (P->get_owner () == WHITE && P->can_be_en_passant ()) {
-				add_move (pos, pos + (-(1 << 4) | 1), P);
+				add_move (pos, pos + (-(1 << 4) | 1), moves, P);
 			}
 		} else if (last_moved == pos - 1) {
 			P = board(last_moved);
 			if (P->get_owner () == WHITE && P->can_be_en_passant ()) {
-				add_move (pos, pos + (-(1 << 4) - 1), P);
+				add_move (pos, pos + (-(1 << 4) - 1), moves, P);
 			}
 		}
 	}
 }
-void Game::get_queen_moves (int pos) {
-	get_bishop_moves (pos);
-	get_rook_moves (pos);
+void Game::get_queen_moves (int pos, int*& moves) {
+	get_bishop_moves (pos, moves);
+	get_rook_moves (pos, moves);
 }
-void Game::get_rook_moves (int pos) {
+void Game::get_rook_moves (int pos, int*& moves) {
 	int p;
 	Piece* P;
 
@@ -560,11 +591,11 @@ void Game::get_rook_moves (int pos) {
 		P = board(p);
 		if (P) {
 			if (P->get_owner () != turn) {
-				add_move (pos, p, P);
+				add_move (pos, p, moves, P);
 			}
 			break;
 		}
-		add_move (pos, p);
+		add_move (pos, p, moves);
 		p += (1 << 4);
 	}
 
@@ -574,11 +605,11 @@ void Game::get_rook_moves (int pos) {
 		P = board(p);
 		if (P) {
 			if (P->get_owner () != turn) {
-				add_move (pos, p, P);
+				add_move (pos, p, moves, P);
 			}
 			break;
 		}
-		add_move (pos, p);
+		add_move (pos, p, moves);
 		p += (1 & 0xf);
 	}
 
@@ -588,11 +619,11 @@ void Game::get_rook_moves (int pos) {
 		P = board(p);
 		if (P) {
 			if (P->get_owner () != turn) {
-				add_move (pos, p, P);
+				add_move (pos, p, moves, P);
 			}
 			break;
 		}
-		add_move (pos, p);
+		add_move (pos, p, moves);
 		p -= (1 << 4);
 	}
 
@@ -602,11 +633,11 @@ void Game::get_rook_moves (int pos) {
 		P = board(p);
 		if (P) {
 			if (P->get_owner () != turn) {
-				add_move (pos, p, P);
+				add_move (pos, p, moves, P);
 			}
 			break;
 		}
-		add_move (pos, p);
+		add_move (pos, p, moves);
 		p -= (1 & 0xf);
 	}
 }
@@ -945,6 +976,14 @@ bool Game::checked_by_pawn (int pos) {
 	return false;
 }
 
+const char pieces_repr [33] = {'.', 
+	'B', 
+	'K', '.', 
+	'k', '.', '.', '.', 
+	'P', '.', '.', '.', '.', '.', '.', '.', 
+	'Q', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 
+	'R'
+};
 void Game::print_board () {
 	for (int i = 7; i >= 0; i--) {
 		cout << "\t" << (i + 1) << "  |";
@@ -974,9 +1013,7 @@ void Game::print_board () {
 	}
 	cout << endl << endl << endl;
 }
-void Game::print_possible_moves () {
-	load_moves ();
-
+void Game::print_possible_moves (int* moves, int n_moves) {
 	cout << n_moves << endl;
 	if (is_checkmate) {
 		cout << "Checkmate" << endl;
@@ -1017,15 +1054,20 @@ void Game::human_move (string move) {	// "a1 h8x"
 int Game::test () {
 	int cnt = 0;
 	int move;
-	
+	int moves[128];
+	int n_moves;
+
 	while (cnt < 10'000) {
-		load_moves ();
+		n_moves = load_moves (moves);
 		if (is_checkmate || is_draw) {
 			break;
 		}
 		move = moves[rand () % n_moves];
 		move_piece (move & 0xff, move >> 8);
 		cnt++;
+		if (is_draw) {
+			break;
+		}
 	}
 
 	return cnt | (turn << 29) | (is_checkmate << 30) | (is_draw << 31);

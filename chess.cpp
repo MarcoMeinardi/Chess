@@ -4,9 +4,13 @@ int main () {
     Game* game;
 
     // standard game (good luck)
+    // int moves[128];
+    // int n_moves;
+    // game = new Game ();
     // while (true) {
     //     game->print_board ();
-    //     game->print_possible_moves ();
+    //     n_moves = game->load_moves (moves);
+    //     game->print_possible_moves (moves, n_moves);
 
     //     cout << "> ";
     //     string from, to;
@@ -17,7 +21,7 @@ int main () {
 
     // test
     srand (time (NULL));
-    int total_games = 100'000;
+    int total_games = 10'000;
     int total_moves = 0;
     int black_win = 0, white_win = 0;
     int checkmates = 0, draws = 0;
@@ -58,7 +62,7 @@ int main () {
         } else if (is_draw) {
             draws++;
         } else {
-            cout << "Somthing strange has happened (maybe stopped???)" << endl;
+            cout << "Somthing strange has happened (maybe stopped?)" << endl;
         }
         total_moves += cnt;
     }
