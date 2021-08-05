@@ -10,6 +10,18 @@ using namespace std;
 #define WHITE 0
 #define BLACK 1
 
+#define MAX_DEPTH 3
+#define INF 255
+
+const char values[33] = {0, 
+	3, 												// Bishop
+	0, 0, 											// King
+	3, 0, 0, 0, 									// Knight
+	1, 0, 0, 0, 0, 0, 0, 0, 						// Pawn
+	9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	// Queen
+	5												// Rook
+};
+
 class Game {
 private:
 	Board board;
@@ -53,5 +65,11 @@ public:
 	void human_move (string move);
 
 	int test ();
+
+	int get_best_move ();
+	int mini (int depth, int alpha, int beta);
+	int maxi (int depth, int alpha, int beta);
+	Piece* simulate_move (int move, bool& was_first_double_move);
+	void undo_simulated_move (int move, Piece* eaten);
 };
 

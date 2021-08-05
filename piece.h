@@ -10,7 +10,7 @@
 class Piece {
 private:
 	int pos;
-	bool has_moved;	// for pawn first move and castle
+	bool has_moved;	// for castle
 	int type;
 	int owner;
 	bool first_double_move; // for en passant
@@ -53,6 +53,14 @@ public:
 
 	inline void undo_promote () {
 		type = PAWN;
+	}
+
+	inline void undo_first_move () {
+		has_moved = false;
+	}
+
+	inline void set_prev_first_double_move (bool first_double_move_) {
+		first_double_move = first_double_move_;
 	}
 
 	void move (int to) {

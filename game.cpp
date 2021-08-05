@@ -57,13 +57,12 @@ Game::~Game () {
 void Game::move_piece (int from, int to) {
 	moves_without_take_or_pawn_move++;
 	turn ^= 1;
-	last_moved = to & 0xff;
 
 	if (board(from)->get_type () == KING) {
 		// short-castle
 		if (to == from + 2) {
-			board(from)->move (to & 0xff);
-			board(to & 0xff) = board(from);
+			board(from)->move (to);
+			board(to) = board(from);
 			board(from) = nullptr;
 			board(from + 3)->move (from + 1);
 			board(from + 1) = board(from + 3);
@@ -72,8 +71,8 @@ void Game::move_piece (int from, int to) {
 		} else 
 		// long castle
 		if (to == from - 2) {
-			board(from)->move (to & 0xff);
-			board(to & 0xff) = board(from);
+			board(from)->move (to);
+			board(to) = board(from);
 			board(from) = nullptr;
 			board(from - 4)->move (from - 1);
 			board(from - 1) = board(from - 4);
@@ -87,24 +86,27 @@ void Game::move_piece (int from, int to) {
 		free (board[(from >> 4) | (to & 0x7)]);
 		board[(from >> 4) | (to & 0x7)] = nullptr;
 		remaining_pieces[turn]--;
-	}
-
+	} else 
+	// promotion
 	if (to >> 8) {
 		board(from)->promote (to >> 8);
 	}
+
+	to &= 0xff;
+	last_moved = to;
 
 	if (board(from)->get_type () == PAWN) {
 		moves_without_take_or_pawn_move = 0;
 	}
 
-	if (board(to & 0xff)) {
-		free (board(to & 0xff));
+	if (board(to)) {
+		free (board(to));
 		moves_without_take_or_pawn_move = 0;
 		remaining_pieces[turn]--;
 		check_draw ();
 	}
-	board(from)->move (to & 0xff);
-	board(to & 0xff) = board(from);
+	board(from)->move (to);
+	board(to) = board(from);
 	board(from) = nullptr;
 
 	if (moves_without_take_or_pawn_move == 50) {
@@ -467,7 +469,7 @@ void Game::get_pawn_moves (int pos, int*& moves) {
 			} else {
 				add_move (pos, p, moves);
 				p += (1 << 4);
-				if (board(pos)->is_first_move () && !board(p)) {
+				if ((pos >> 4) == 1  && !board(p)) {
 					add_move (pos, p, moves);	
 				}
 			}
@@ -527,7 +529,7 @@ void Game::get_pawn_moves (int pos, int*& moves) {
 			} else {
 				add_move (pos, p, moves);
 				p -= (1 << 4);
-				if (board(pos)->is_first_move () && !board(p)) {
+				if ((pos >> 4) == 6 && !board(p)) {
 					add_move (pos, p, moves);
 				}
 			}
@@ -976,7 +978,7 @@ bool Game::checked_by_pawn (int pos) {
 	return false;
 }
 
-const char pieces_repr [33] = {'.', 
+const char pieces_repr[33] = {'.', 
 	'B', 
 	'K', '.', 
 	'k', '.', '.', '.', 
@@ -1035,6 +1037,22 @@ void Game::print_possible_moves (int* moves, int n_moves) {
 	}
 }
 void Game::human_move (string move) {	// "a1 h8x"
+	if (move[0] == 'A') {
+		int best = get_best_move ();
+		int score = best & 0xffff;
+		int from = (best >> 16) & 0xff;
+		int to = (best >> (16 + 8));
+
+		cout << "Predicted score: " << score << endl;
+		cout << pieces_repr[board(from)->get_type ()] << "\t";
+		cout << (char)((from & 0xf) + 'a') << ((from >> 4) + 1) << "\t->\t";
+		cout << (char)((to & 0xf) + 'a') << (((to >> 4) & 0xf) + 1);
+		if (to >> 8) {
+			cout << pieces_repr[to >> 8];
+		}
+
+		return;
+	}
 	int from_col = move[0] - 'a';
 	int from_row = move[1] - '1';
 	int to_col = move[3] - 'a';
@@ -1071,4 +1089,256 @@ int Game::test () {
 	}
 
 	return cnt | (turn << 29) | (is_checkmate << 30) | (is_draw << 31);
+}
+
+int Game::get_best_move () {
+	int best;
+	if (turn == WHITE) {
+		best = maxi (MAX_DEPTH, -INF, INF);
+	} else {
+		best = mini (MAX_DEPTH, -INF, INF);
+	}
+
+	return best;
+}
+int Game::mini (int depth, int alpha, int beta) {
+	if (!depth) {
+		// return evaluate score
+		return 0;
+	}
+
+	int moves[128];
+	int n_moves = load_moves (moves);
+
+	if (is_checkmate) {
+		return -INF;
+	} else if (is_draw) {
+		return 0;
+	}
+
+	int best_score = INF;
+	int actual_score;
+	Piece* eaten;
+	int prev_moves_without_take_or_pawn_move = moves_without_take_or_pawn_move;
+	int prev_last_moved = last_moved;
+	bool was_first_double_move;
+
+	for (int i = 0; i < n_moves; i++) {
+		// simulate move
+		eaten = simulate_move (moves[i], was_first_double_move);
+		if (eaten) {
+			actual_score = -values[eaten->get_type ()];
+		} else {
+			actual_score = 0;
+		}
+
+		actual_score += maxi (depth - 1, alpha, beta);
+		if ((actual_score & 0xff) < (best_score & 0xff)) {
+			best_score = (actual_score & 0xff) | (moves[i] << 16);
+			if ((best_score & 0xff) <= alpha) {
+				// undo simulated move
+				undo_simulated_move (moves[i], eaten);
+				moves_without_take_or_pawn_move = prev_moves_without_take_or_pawn_move;
+				last_moved = prev_last_moved;
+				if (eaten && eaten->get_type () == PAWN) {
+					eaten->set_prev_first_double_move (was_first_double_move);
+				}
+				break;
+			}
+			if ((best_score & 0xff) > beta) {
+				beta = (best_score & 0xff);
+			}
+		}
+
+		// undo simulated move
+		undo_simulated_move (moves[i], eaten);
+		moves_without_take_or_pawn_move = prev_moves_without_take_or_pawn_move;
+		last_moved = prev_last_moved;
+		if (eaten && eaten->get_type () == PAWN) {
+			eaten->set_prev_first_double_move (was_first_double_move);
+		}
+	}
+
+	return best_score;
+}
+int Game::maxi (int depth, int alpha, int beta) {
+	if (!depth) {
+		// return evaluate score
+		return 0;
+	}
+
+	int moves[128];
+	int n_moves = load_moves (moves);
+
+	if (is_checkmate) {
+		return INF;
+	} else if (is_draw) {
+		return 0;
+	}
+
+	int best_score = -INF;
+	int actual_score;
+	Piece* eaten;
+	int prev_moves_without_take_or_pawn_move = moves_without_take_or_pawn_move;
+	int prev_last_moved = last_moved;
+	bool was_first_double_move;
+
+	for (int i = 0; i < n_moves; i++) {
+		// simulate move
+		eaten = simulate_move (moves[i], was_first_double_move);
+		if (eaten) {
+			actual_score = values[eaten->get_type ()];
+		} else {
+			actual_score = 0;
+		}
+
+		actual_score += mini (depth - 1, alpha, beta);
+		if ((actual_score & 0xff) > (best_score & 0xff)) {
+			best_score = (actual_score & 0xff) | (moves[i] << 16);
+			if ((best_score & 0xff) >= beta) {
+				// undo simulated move
+				undo_simulated_move (moves[i], eaten);
+				moves_without_take_or_pawn_move = prev_moves_without_take_or_pawn_move;
+				last_moved = prev_last_moved;
+				if (eaten && eaten->get_type () == PAWN) {
+					eaten->set_prev_first_double_move (was_first_double_move);
+				}
+				break;
+			}
+			if ((best_score & 0xff) < alpha) {
+				alpha = (best_score & 0xff);
+			}
+		}
+
+		// undo simulated move
+		undo_simulated_move (moves[i], eaten);
+		moves_without_take_or_pawn_move = prev_moves_without_take_or_pawn_move;
+		last_moved = prev_last_moved;
+		if (eaten && eaten->get_type () == PAWN) {
+			eaten->set_prev_first_double_move (was_first_double_move);
+		}
+	}
+
+	return best_score;
+}
+Piece* Game::simulate_move (int move, bool& was_first_double_move) {
+	int from = move & 0xff;
+	int to = move >> 8;
+	moves_without_take_or_pawn_move++;
+	turn ^= 1;
+	Piece* eaten;
+
+	if (board(from)->get_type () == KING) {
+		// short-castle
+		if (to == from + 2) {
+			board(from)->move (to);
+			board(to) = board(from);
+			board(from) = nullptr;
+			board(from + 3)->move (from + 1);
+			board(from + 1) = board(from + 3);
+			board(from + 3) = nullptr;
+			return nullptr;
+		} else 
+		// long castle
+		if (to == from - 2) {
+			board(from)->move (to);
+			board(to) = board(from);
+			board(from) = nullptr;
+			board(from - 4)->move (from - 1);
+			board(from - 1) = board(from - 4);
+			board(from - 4) = nullptr;
+			return nullptr;
+		}
+	}
+
+	// en passant
+	if (board(from)->get_type () == PAWN) {
+		// en passant
+		if ((from & 0x7) != (to & 0x7) && !board(to & 0xff)) {
+			eaten = board[(from >> 4) | (to & 0x7)];
+			board[(from >> 4) | (to & 0x7)] = nullptr;
+			remaining_pieces[turn]--;
+		} 
+		// remember double first move
+		else {
+			was_first_double_move = board(from)->can_be_en_passant ();
+		}		
+	} else 
+	// promotion
+	if (to >> 8) {
+		board(from)->promote (to >> 8);
+	}
+
+	to &= 0xff;
+	last_moved = to;
+
+	if (board(from)->get_type () == PAWN) {
+		moves_without_take_or_pawn_move = 0;
+	}
+
+	if (board(to)) {
+		eaten = board(to);
+		moves_without_take_or_pawn_move = 0;
+		remaining_pieces[turn]--;
+		check_draw ();
+	}
+	board(from)->move (to);
+	board(to) = board(from);
+	board(from) = nullptr;
+
+	if (moves_without_take_or_pawn_move == 50) {
+		is_draw = true;
+	}
+
+	return eaten;
+}
+void Game::undo_simulated_move (int move, Piece* eaten) {
+	int from = move & 0xff;
+	int to = move >> 8;
+	turn ^= 1;
+
+	if (board(to & 0xff)->get_type () == KING) {
+		// short-castle
+		if (to == from + 2) {
+			board(to)->move (from);
+			board(from) = board(to);
+			board(to) = nullptr;
+			board(from + 1)->move (from + 3);
+			board(from + 3) = board(from + 1);
+			board(from + 1) = nullptr;
+			board(from)->undo_first_move ();
+			board(from + 3)->undo_first_move ();
+			return;
+		} else 
+		// long castle
+		if (to == from - 2) {
+			board(to)->move (from);
+			board(from) = board(to);
+			board(to) = nullptr;
+			board(from - 1)->move (from - 4);
+			board(from - 4) = board(from - 1);
+			board(from - 1) = nullptr;
+			board(from)->undo_first_move ();
+			board(from - 4)->undo_first_move ();
+			return;
+		}
+	}
+
+	// promotion
+	if (to >> 8) {
+		board(to & 0xff)->undo_promote ();
+	}
+
+	to &= 0xff;
+
+	board(to)->move (from);
+	board(from) = board(to);
+	board(to) = nullptr;
+
+	if (eaten) {
+		board(eaten->get_pos ()) = eaten;
+	}
+
+	is_checkmate = false;
+	is_draw = false;
 }
