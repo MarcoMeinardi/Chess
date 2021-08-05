@@ -424,7 +424,7 @@ void Game::get_pawn_moves (int pos) {
 			} else {
 				add_move (pos, p);
 				p += (1 << 4);
-				if (board(pos)->is_first_move () && !(p & 0b10001000) && !board(p)) {
+				if (board(pos)->is_first_move () && !board(p)) {
 					add_move (pos, p);	
 				}
 			}
@@ -463,12 +463,12 @@ void Game::get_pawn_moves (int pos) {
 		// en passant
 		if (last_moved == pos + 1) {
 			P = board(last_moved);
-			if (P->can_be_en_passant ()) {
+			if (P->get_owner () == BLACK && P->can_be_en_passant ()) {
 				add_move (pos, pos + ((1 << 4) | 1), P);
 			}
 		} else if (last_moved == pos - 1) {
 			P = board(last_moved);
-			if (P->can_be_en_passant ()) {
+			if (P->get_owner () == BLACK && P->can_be_en_passant ()) {
 				add_move (pos, pos + ((1 << 4) - 1), P);
 			}
 		}
@@ -484,7 +484,7 @@ void Game::get_pawn_moves (int pos) {
 			} else {
 				add_move (pos, p);
 				p -= (1 << 4);
-				if (board(pos)->is_first_move () && !(p & 0b10001000) && !board(p)) {
+				if (board(pos)->is_first_move () && !board(p)) {
 					add_move (pos, p);
 				}
 			}
@@ -523,12 +523,12 @@ void Game::get_pawn_moves (int pos) {
 		// en passant
 		if (last_moved == pos + 1) {
 			P = board(last_moved);
-			if (P->can_be_en_passant ()) {
+			if (P->get_owner () == WHITE && P->can_be_en_passant ()) {
 				add_move (pos, pos + (-(1 << 4) | 1), P);
 			}
 		} else if (last_moved == pos - 1) {
 			P = board(last_moved);
-			if (P->can_be_en_passant ()) {
+			if (P->get_owner () == WHITE && P->can_be_en_passant ()) {
 				add_move (pos, pos + (-(1 << 4) - 1), P);
 			}
 		}
@@ -1005,8 +1005,11 @@ void Game::human_move (string move) {	// "a1 h8x"
 int Game::test () {
 	int cnt = 0;
 	int move;
+	
 	while (cnt < 10'000) {
+		// print_board ();
 		load_moves ();
+		// print_possible_moves ();
 		if (is_checkmate || is_draw) {
 			break;
 		}

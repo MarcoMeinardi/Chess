@@ -18,7 +18,7 @@ int main () {
     // test
     srand (time (NULL));
     int total_moves = 0;
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 1000; i++) {
         game = new Game ();
         int res = game->test ();
         free (game);

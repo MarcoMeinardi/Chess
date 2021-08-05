@@ -56,11 +56,11 @@ public:
 	}
 
 	void move (int to) {
-		pos = to;
+		has_moved = true;
 		first_double_move = false;
-		if (type == PAWN && to != pos + (1 << 4) && to != pos - (1 << 4)) {
+		if (type == PAWN && (to >> 4) != (pos >> 4) + 1 && (to >> 4) != (pos >> 4) - 1) {
 			first_double_move = true;
 		}
-		has_moved = true;
+		pos = to;
 	}
 };
