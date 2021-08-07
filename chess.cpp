@@ -1,4 +1,5 @@
 #include "./game.h"
+#include <ctime>
 
 int main () {
     Game* game;
@@ -6,6 +7,7 @@ int main () {
     // standard game (good luck)
     int moves[128];
     int n_moves;
+    srand (time (NULL));
     game = new Game ();
     while (true) {
         game->print_board ();

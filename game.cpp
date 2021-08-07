@@ -109,7 +109,7 @@ void Game::move_piece (int from, int to) {
 	board(to) = board(from);
 	board(from) = nullptr;
 
-	if (moves_without_take_or_pawn_move == 50) {
+	if (moves_without_take_or_pawn_move == 100) {
 		is_draw = true;
 	}
 }
@@ -987,12 +987,12 @@ void Game::print_possible_moves (int* moves, int n_moves) {
 		}
 	}
 }
-void Game::human_move (string move) {	// "a1 h8x"
+void Game::human_move (string move) {	// "a1 h8x" or "A"
 	if (move[0] == 'A') {
-		int best = get_best_move ();
-		int score = best & 0xffff;
-		int from = (best >> 16) & 0xff;
-		int to = (best >> (16 + 8));
+		int best_move;
+		int score = get_best_move (&best_move);
+		int from = best_move & 0xff;
+		int to = best_move >> 8;
 
 		cout << "Predicted score: " << score << endl;
 		cout << pieces_repr[board(from)->get_type ()] << "\t";
@@ -1001,6 +1001,7 @@ void Game::human_move (string move) {	// "a1 h8x"
 		if (to >> 8) {
 			cout << pieces_repr[to >> 8];
 		}
+		cout << endl << endl;
 
 		return;
 	}
@@ -1042,18 +1043,14 @@ int Game::test () {
 	return cnt | (turn << 29) | (is_checkmate << 30) | (is_draw << 31);
 }
 
-int Game::get_best_move () {
-	int best;
-	int best_move;
+int Game::get_best_move (int* best_move) {
 	if (turn == WHITE) {
-		best = maxi (MAX_DEPTH, -INF, INF, best_move);
+		return maxi (MAX_DEPTH, -INF, INF, best_move);
 	} else {
-		best = mini (MAX_DEPTH, -INF, INF, best_move);
+		return mini (MAX_DEPTH, -INF, INF, best_move);
 	}
-
-	return best;
 }
-int Game::mini (int depth, int alpha, int beta, int& best_move) {
+int Game::mini (int depth, int alpha, int beta, int* best_move) {
 	if (!depth) {
 		// return evaluate score
 		return 0;
@@ -1063,13 +1060,15 @@ int Game::mini (int depth, int alpha, int beta, int& best_move) {
 	int n_moves = load_moves (moves);
 
 	if (is_checkmate) {
-		return -INF;
+		return INF;
 	} else if (is_draw) {
 		return 0;
 	}
+	random_shuffle (moves, moves + n_moves);	// in the beginning the predicted score is zero so he just make the first available move
 
 	int best_score = INF;
 	int actual_score;
+	int my_best_move;
 	Piece* eaten;
 	Piece* moved;
 	int prev_moves_without_take_or_pawn_move = moves_without_take_or_pawn_move;
@@ -1090,11 +1089,11 @@ int Game::mini (int depth, int alpha, int beta, int& best_move) {
 		if (is_draw) {
 			actual_score = 0;
 		} else {
-			actual_score += maxi (depth - 1, alpha, beta, best_move);
+			actual_score += maxi (depth - 1, alpha, beta, nullptr);
 		}
 		if (actual_score < best_score) {
 			best_score = actual_score;
-			best_move = moves[i];
+			my_best_move = moves[i];
 			if (best_score <= alpha) {
 				// undo simulated move
 				undo_simulated_move (moves[i], eaten);
@@ -1115,9 +1114,12 @@ int Game::mini (int depth, int alpha, int beta, int& best_move) {
 		moved->set_prev_first_double_move (was_first_double_move);
 	}
 
+	if (best_move) {
+		*best_move = my_best_move;
+	}
 	return best_score;
 }
-int Game::maxi (int depth, int alpha, int beta, int& best_move) {
+int Game::maxi (int depth, int alpha, int beta, int* best_move) {
 	if (!depth) {
 		// return evaluate score
 		return 0;
@@ -1127,13 +1129,15 @@ int Game::maxi (int depth, int alpha, int beta, int& best_move) {
 	int n_moves = load_moves (moves);
 
 	if (is_checkmate) {
-		return INF;
+		return -INF;
 	} else if (is_draw) {
 		return 0;
 	}
+	random_shuffle (moves, moves + n_moves);	// in the beginning the predicted score is zero so he just make the first available move
 
 	int best_score = -INF;
 	int actual_score;
+	int my_best_move;
 	Piece* eaten;
 	Piece* moved;
 	int prev_moves_without_take_or_pawn_move = moves_without_take_or_pawn_move;
@@ -1154,11 +1158,12 @@ int Game::maxi (int depth, int alpha, int beta, int& best_move) {
 		if (is_draw) {
 			actual_score = 0;
 		} else {
-			actual_score += mini (depth - 1, alpha, beta, best_move);
+			actual_score += mini (depth - 1, alpha, beta, nullptr);
 		}
-		if ((actual_score & 0xff) > (best_score & 0xff)) {
-			best_score = (actual_score & 0xff) | (moves[i] << 16);
-			if ((best_score & 0xff) >= beta) {
+		if (actual_score > best_score) {
+			best_score = actual_score;
+			my_best_move = moves[i];
+			if (best_score >= beta) {
 				// undo simulated move
 				undo_simulated_move (moves[i], eaten);
 				moves_without_take_or_pawn_move = prev_moves_without_take_or_pawn_move;
@@ -1166,8 +1171,8 @@ int Game::maxi (int depth, int alpha, int beta, int& best_move) {
 				moved->set_prev_first_double_move (was_first_double_move);
 				break;
 			}
-			if ((best_score & 0xff) < alpha) {
-				alpha = (best_score & 0xff);
+			if (best_score < alpha) {
+				alpha = best_score;
 			}
 		}
 
@@ -1178,6 +1183,9 @@ int Game::maxi (int depth, int alpha, int beta, int& best_move) {
 		moved->set_prev_first_double_move (was_first_double_move);
 	}
 
+	if (best_move) {
+		*best_move = my_best_move;
+	}
 	return best_score;
 }
 Piece* Game::simulate_move (int move) {
@@ -1185,7 +1193,7 @@ Piece* Game::simulate_move (int move) {
 	int to = move >> 8;
 	moves_without_take_or_pawn_move++;
 	turn = !turn;
-	Piece* eaten;
+	Piece* eaten = nullptr;
 
 	if (board(from)->get_type () == KING) {
 		// short-castle
@@ -1241,7 +1249,7 @@ Piece* Game::simulate_move (int move) {
 	board(to) = board(from);
 	board(from) = nullptr;
 
-	if (moves_without_take_or_pawn_move == 50) {
+	if (moves_without_take_or_pawn_move == 100) {
 		is_draw = true;
 	}
 

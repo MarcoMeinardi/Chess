@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <cstdlib>
-#include <ctime>
+#include <algorithm>
 using namespace std;
 
 #include "./board.h"
@@ -10,12 +10,12 @@ using namespace std;
 #define WHITE 0
 #define BLACK 1
 
-#define MAX_DEPTH 3
+#define MAX_DEPTH 5
 #define INF 255
 
 const char values[33] = {0, 
 	3, 												// Bishop
-	0, 0, 											// King
+	2, 0, 											// King
 	3, 0, 0, 0, 									// Knight
 	1, 0, 0, 0, 0, 0, 0, 0, 						// Pawn
 	9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	// Queen
@@ -64,9 +64,9 @@ public:
 
 	int test ();
 
-	int get_best_move ();
-	int mini (int depth, int alpha, int beta, int& best_move);
-	int maxi (int depth, int alpha, int beta, int& best_move);
+	int get_best_move (int* best_move);
+	int mini (int depth, int alpha, int beta, int* best_move);
+	int maxi (int depth, int alpha, int beta, int* best_move);
 	Piece* simulate_move (int move);
 	void undo_simulated_move (int move, Piece* eaten);
 };
