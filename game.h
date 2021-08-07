@@ -53,11 +53,9 @@ public:
 	void get_queen_moves (int pos, int*& moves);
 	void get_rook_moves (int pos, int*& moves);
 
-	bool checked_by_bishop_queen (int pos);
-	bool checked_by_rook_queen (int pos);
+	bool checked_diagonal (int pos);
+	bool checked_horizontal (int pos);
 	bool checked_by_knight (int pos);
-	bool checked_near (int pos);
-	bool checked_by_pawn (int pos);
 
 
 	void print_board ();
@@ -67,9 +65,9 @@ public:
 	int test ();
 
 	int get_best_move ();
-	int mini (int depth, int alpha, int beta);
-	int maxi (int depth, int alpha, int beta);
-	Piece* simulate_move (int move, bool& was_first_double_move);
+	int mini (int depth, int alpha, int beta, int& best_move);
+	int maxi (int depth, int alpha, int beta, int& best_move);
+	Piece* simulate_move (int move);
 	void undo_simulated_move (int move, Piece* eaten);
 };
 

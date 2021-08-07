@@ -25,7 +25,7 @@ int main () {
     free (game);
 
     // test
-    // srand (time (NULL));
+    // srand (0);
     // int total_games = 10'000;
     // int total_moves = 0;
     // int black_win = 0, white_win = 0;

@@ -56,7 +56,7 @@ Game::~Game () {
 
 void Game::move_piece (int from, int to) {
 	moves_without_take_or_pawn_move++;
-	turn ^= 1;
+	turn = !turn;
 
 	if (board(from)->get_type () == KING) {
 		// short-castle
@@ -182,13 +182,7 @@ void Game::add_move (int from, int to, int*& moves, Piece* eaten = nullptr) {
 	}
 }
 bool Game::is_check (int pos) {
-	if (checked_by_bishop_queen (pos)) return true;
-	if (checked_by_rook_queen (pos)) return true;
-	if (checked_by_knight (pos)) return true;
-	if (checked_near (pos)) return true;
-	if (checked_by_pawn (pos)) return true;
-
-	return false;
+	return checked_diagonal (pos) || checked_horizontal (pos) || checked_by_knight (pos);
 }
 void Game::check_draw () {
 	if (remaining_pieces[WHITE] > 1 && remaining_pieces[BLACK] > 1) {
@@ -644,141 +638,213 @@ void Game::get_rook_moves (int pos, int*& moves) {
 	}
 }
 
-bool Game::checked_by_bishop_queen (int pos) {
+bool Game::checked_diagonal (int pos) {
 	int p;
 	Piece* P;
 
 	// rigth-up
 	p = pos + ((1 << 4) | (1 & 0xf));
-	if (!(p & 0b10001000) && !board(p)) {
-		p += (1 << 4) | (1 & 0xf);
-		while (!(p & 0b10001000)) {
-			P = board(p);
-			if (P) {
-				if (P->get_owner() != turn && (P->get_type() & (BISHOP | QUEEN))) {
+	if (!(p & 0b10001000)) {
+		P = board(p);
+		if (P) {
+			if (P->get_owner () != turn) {
+				if (P->get_type () & (BISHOP | QUEEN | KING)) {
+					return true;
+				} else if (turn == WHITE && P->get_type () == PAWN) {
 					return true;
 				}
-				break;
 			}
+		} else {
 			p += (1 << 4) | (1 & 0xf);
+			while (!(p & 0b10001000)) {
+				P = board(p);
+				if (P) {
+					if (P->get_owner () != turn && (P->get_type () & (BISHOP | QUEEN))) {
+						return true;
+					}
+					break;
+				}
+				p += (1 << 4) | (1 & 0xf);
+			}
 		}
 	}
 
 	// right-down
 	p = pos + (-(1 << 4) | (1 & 0xf));
-	if (!(p & 0b10001000) && !board(p)) {
-		p += -(1 << 4) | (1 & 0xf);
-			while (!(p & 0b10001000)) {
-			P = board(p);
-			if (P) {
-				if (P->get_owner() != turn && (P->get_type() & (BISHOP | QUEEN))) {
+	if (!(p & 0b10001000)) {
+		P = board(p);
+		if (P) {
+			if (P->get_owner () != turn) {
+				if (P->get_type () & (BISHOP | QUEEN | KING)) {
+					return true;
+				} else if (turn == BLACK && P->get_type () == PAWN) {
 					return true;
 				}
-				break;
 			}
+		} else {
 			p += -(1 << 4) | (1 & 0xf);
+			while (!(p & 0b10001000)) {
+				P = board(p);
+				if (P) {
+					if (P->get_owner () != turn && (P->get_type () & (BISHOP | QUEEN))) {
+						return true;
+					}
+					break;
+				}
+				p += -(1 << 4) | (1 & 0xf);
+			}
 		}
 	}
 
 	// left-down
 	p = pos + (-(1 << 4) - (1 & 0xf));
-	if (!(p & 0b10001000) && !board(p)) {
-		p += -(1 << 4) - (1 & 0xf);
-		while (!(p & 0b10001000)) {
-			P = board(p);
-			if (P) {
-				if (P->get_owner() != turn && (P->get_type() & (BISHOP | QUEEN))) {
+	if (!(p & 0b10001000)) {
+		P = board(p);
+		if (P) {
+			if (P->get_owner () != turn) {
+				if (P->get_type () & (BISHOP | QUEEN | KING)) {
+					return true;
+				} else if (turn == BLACK && P->get_type () == PAWN) {
 					return true;
 				}
-				break;
 			}
+		} else {
 			p += -(1 << 4) - (1 & 0xf);
+			while (!(p & 0b10001000)) {
+				P = board(p);
+				if (P) {
+					if (P->get_owner () != turn && (P->get_type () & (BISHOP | QUEEN))) {
+						return true;
+					}
+					break;
+				}
+				p += -(1 << 4) - (1 & 0xf);
+			}
 		}
 	}
 
 	// left-up
 	p = pos + ((1 << 4) - (1 & 0xf));
-	if (!(p & 0b10001000) && !board(p)) {
-		p += (1 << 4) - (1 & 0xf);
-		while (!(p & 0b10001000)) {
-			P = board(p);
-			if (P) {
-				if (P->get_owner() != turn && (P->get_type() & (BISHOP | QUEEN))) {
+	if (!(p & 0b10001000)) {
+		P = board(p);
+		if (P) {
+			if (P->get_owner () != turn) {
+				if (P->get_type () & (BISHOP | QUEEN | KING)) {
+					return true;
+				} else if (turn == WHITE && P->get_type () == PAWN) {
 					return true;
 				}
-				break;
 			}
+		} else {
 			p += (1 << 4) - (1 & 0xf);
+			while (!(p & 0b10001000)) {
+				P = board(p);
+				if (P) {
+					if (P->get_owner () != turn && (P->get_type () & (BISHOP | QUEEN))) {
+						return true;
+					}
+					break;
+				}
+				p += (1 << 4) - (1 & 0xf);
+			}
 		}
 	}
 
 	return false;
 }
-bool Game::checked_by_rook_queen (int pos) {
+bool Game::checked_horizontal (int pos) {
 	int p;
 	Piece* P;
 
 	// up
 	p = pos + (1 << 4);
-	if (!(p & 0b10001000) && !board(p)) {
-		p += (1 << 4);
-		while (!(p & 0b10001000)) {
-			P = board(p);
-			if (P) {
-				if (P->get_owner() != turn && (P->get_type() & (ROOK | QUEEN))) {
-					return true;
-				}
-				break;
+	if (!(p & 0b10001000)) {
+		P = board(p);
+		if (P) {
+			if (P->get_owner () != turn && P->get_type () & (ROOK | QUEEN | KING)) {
+				return true;
 			}
+		} else {
 			p += (1 << 4);
+			while (!(p & 0b10001000)) {
+				P = board(p);
+				if (P) {
+					if (P->get_owner () != turn && (P->get_type () & (ROOK | QUEEN))) {
+						return true;
+					}
+					break;
+				}
+				p += (1 << 4);
+			}
 		}
 	}
 
 	// right
 	p = pos + (1 & 0xf);
-	if (!(p & 0b10001000) && !board(p)) {
-		p += (1 & 0xf);
-		while (!(p & 0b10001000)) {
-			P = board(p);
-			if (P) {
-				if (P->get_owner() != turn && (P->get_type() & (ROOK | QUEEN))) {
-					return true;
-				}
-				break;
+	if (!(p & 0b10001000)) {
+		P = board(p);
+		if (P) {
+			if (P->get_owner () != turn && P->get_type () & (ROOK | QUEEN | KING)) {
+				return true;
 			}
+		} else {
 			p += (1 & 0xf);
+			while (!(p & 0b10001000)) {
+				P = board(p);
+				if (P) {
+					if (P->get_owner () != turn && (P->get_type () & (ROOK | QUEEN))) {
+						return true;
+					}
+					break;
+				}
+				p += (1 & 0xf);
+			}
 		}
 	}
 
 	// down
 	p = pos - (1 << 4);
-	if (!(p & 0b10001000) && !board(p)) {
-		p -= (1 << 4);
-		while (!(p & 0b10001000)) {
-			P = board(p);
-			if (P) {
-				if (P->get_owner() != turn && (P->get_type() & (ROOK | QUEEN))) {
-					return true;
-				}
-				break;
+	if (!(p & 0b10001000)) {
+		P = board(p);
+		if (P) {
+			if (P->get_owner () != turn && P->get_type () & (ROOK | QUEEN | KING)) {
+				return true;
 			}
+		} else {
 			p -= (1 << 4);
+			while (!(p & 0b10001000)) {
+				P = board(p);
+				if (P) {
+					if (P->get_owner () != turn && (P->get_type () & (ROOK | QUEEN))) {
+						return true;
+					}
+					break;
+				}
+				p -= (1 << 4);
+			}
 		}
 	}
 
 	// left
 	p = pos - (1 & 0xf);
-	if (!(p & 0b10001000) && !board(p)) {
-		p -= (1 & 0xf);
-		while (!(p & 0b10001000)) {
-			P = board(p);
-			if (P) {
-				if (P->get_owner() != turn && (P->get_type() & (ROOK | QUEEN))) {
-					return true;
-				}
-				break;
+	if (!(p & 0b10001000)) {
+		P = board(p);
+		if (P) {
+			if (P->get_owner () != turn && P->get_type () & (ROOK | QUEEN | KING)) {
+				return true;
 			}
+		} else {
 			p -= (1 & 0xf);
+			while (!(p & 0b10001000)) {
+				P = board(p);
+				if (P) {
+					if (P->get_owner() != turn && (P->get_type() & (ROOK | QUEEN))) {
+						return true;
+					}
+					break;
+				}
+				p -= (1 & 0xf);
+			}
 		}
 	}
 
@@ -860,121 +926,6 @@ bool Game::checked_by_knight (int pos) {
 		}
 	}
 
-	return false;
-}
-bool Game::checked_near (int pos) {
-	int p;
-	Piece* P;
-
-	// up
-	p = pos + (1 << 4);
-	if (!(p & 0b10001000)) {
-		P = board(p);
-		if (P && P->get_owner() != turn && (P->get_type() & (KING | ROOK | QUEEN))) {
-			return true;
-		}
-	}
-
-	// right-up
-	p = pos + ((1 << 4) | (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
-		if (P && P->get_owner() != turn && (P->get_type() & (KING | BISHOP | QUEEN))) {
-			return true;
-		}
-	}
-
-	// right
-	p = pos + 1;
-	if (!(p & 0b10001000)) {
-		P = board(p);
-		if (P && P->get_owner() != turn && (P->get_type() & (KING | ROOK | QUEEN))) {
-			return true;
-		}
-	}
-
-	// right-down
-	p = pos + (-(1 << 4) | (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
-		if (P && P->get_owner() != turn && (P->get_type() & (KING | BISHOP | QUEEN))) {
-			return true;
-		}
-	}
-
-	// down
-	p = pos - (1 << 4);
-	if (!(p & 0b10001000)) {
-		P = board(p);
-		if (P && P->get_owner() != turn && (P->get_type() & (KING | ROOK | QUEEN))) {
-			return true;
-		}
-	}
-
-	// left-down
-	p = pos + (-(1 << 4) - (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
-		if (P && P->get_owner() != turn && (P->get_type() & (KING | BISHOP | QUEEN))) {
-			return true;
-		}
-	}
-
-	// left
-	p = pos - 1;
-	if (!(p & 0b10001000)) {
-		P = board(p);
-		if (P && P->get_owner() != turn && (P->get_type() & (KING | ROOK | QUEEN))) {
-			return true;
-		}
-	}
-
-	// left-up
-	p = pos + ((1 << 4) - (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
-		if (P && P->get_owner() != turn && (P->get_type() & (KING | BISHOP | QUEEN))) {
-			return true;
-		}
-	}
-
-	return false;
-}
-bool Game::checked_by_pawn (int pos) {
-	int p;
-	Piece* P;
-
-	if (turn == WHITE) {
-		p = pos + ((1 << 4) | (1 & 0xf));
-		if (!(p & 0b10001000)) {
-			P = board(p);
-			if (P && P->get_owner() == BLACK && P->get_type() == PAWN) {
-				return true;
-			}
-		}
-		p = pos + ((1 << 4) - (1 & 0xf));
-		if (!(p & 0b10001000)) {
-			P = board(p);
-			if (P && P->get_owner() == BLACK && P->get_type() == PAWN) {
-				return true;
-			}
-		}
-	} else {
-		p = pos + (-(1 << 4) | (1 & 0xf));
-		if (!(p & 0b10001000)) {
-			P = board(p);
-			if (P && P->get_owner() == WHITE && P->get_type() == PAWN) {
-				return true;
-			}
-		}
-		p = pos + (-(1 << 4) - (1 & 0xf));
-		if (!(p & 0b10001000)) {
-			P = board(p);
-			if (P && P->get_owner() == WHITE && P->get_type() == PAWN) {
-				return true;
-			}
-		}
-	}
 	return false;
 }
 
@@ -1093,15 +1044,16 @@ int Game::test () {
 
 int Game::get_best_move () {
 	int best;
+	int best_move;
 	if (turn == WHITE) {
-		best = maxi (MAX_DEPTH, -INF, INF);
+		best = maxi (MAX_DEPTH, -INF, INF, best_move);
 	} else {
-		best = mini (MAX_DEPTH, -INF, INF);
+		best = mini (MAX_DEPTH, -INF, INF, best_move);
 	}
 
 	return best;
 }
-int Game::mini (int depth, int alpha, int beta) {
+int Game::mini (int depth, int alpha, int beta, int& best_move) {
 	if (!depth) {
 		// return evaluate score
 		return 0;
@@ -1119,34 +1071,40 @@ int Game::mini (int depth, int alpha, int beta) {
 	int best_score = INF;
 	int actual_score;
 	Piece* eaten;
+	Piece* moved;
 	int prev_moves_without_take_or_pawn_move = moves_without_take_or_pawn_move;
 	int prev_last_moved = last_moved;
 	bool was_first_double_move;
 
 	for (int i = 0; i < n_moves; i++) {
 		// simulate move
-		eaten = simulate_move (moves[i], was_first_double_move);
+		moved = board(moves[i] & 0xff);
+		was_first_double_move = moved->can_be_en_passant ();
+		eaten = simulate_move (moves[i]);
 		if (eaten) {
 			actual_score = -values[eaten->get_type ()];
 		} else {
 			actual_score = 0;
 		}
 
-		actual_score += maxi (depth - 1, alpha, beta);
-		if ((actual_score & 0xff) < (best_score & 0xff)) {
-			best_score = (actual_score & 0xff) | (moves[i] << 16);
-			if ((best_score & 0xff) <= alpha) {
+		if (is_draw) {
+			actual_score = 0;
+		} else {
+			actual_score += maxi (depth - 1, alpha, beta, best_move);
+		}
+		if (actual_score < best_score) {
+			best_score = actual_score;
+			best_move = moves[i];
+			if (best_score <= alpha) {
 				// undo simulated move
 				undo_simulated_move (moves[i], eaten);
 				moves_without_take_or_pawn_move = prev_moves_without_take_or_pawn_move;
 				last_moved = prev_last_moved;
-				if (eaten && eaten->get_type () == PAWN) {
-					eaten->set_prev_first_double_move (was_first_double_move);
-				}
+				moved->set_prev_first_double_move (was_first_double_move);
 				break;
 			}
-			if ((best_score & 0xff) > beta) {
-				beta = (best_score & 0xff);
+			if (best_score > beta) {
+				beta = best_score;
 			}
 		}
 
@@ -1154,14 +1112,12 @@ int Game::mini (int depth, int alpha, int beta) {
 		undo_simulated_move (moves[i], eaten);
 		moves_without_take_or_pawn_move = prev_moves_without_take_or_pawn_move;
 		last_moved = prev_last_moved;
-		if (eaten && eaten->get_type () == PAWN) {
-			eaten->set_prev_first_double_move (was_first_double_move);
-		}
+		moved->set_prev_first_double_move (was_first_double_move);
 	}
 
 	return best_score;
 }
-int Game::maxi (int depth, int alpha, int beta) {
+int Game::maxi (int depth, int alpha, int beta, int& best_move) {
 	if (!depth) {
 		// return evaluate score
 		return 0;
@@ -1179,20 +1135,27 @@ int Game::maxi (int depth, int alpha, int beta) {
 	int best_score = -INF;
 	int actual_score;
 	Piece* eaten;
+	Piece* moved;
 	int prev_moves_without_take_or_pawn_move = moves_without_take_or_pawn_move;
 	int prev_last_moved = last_moved;
 	bool was_first_double_move;
 
 	for (int i = 0; i < n_moves; i++) {
 		// simulate move
-		eaten = simulate_move (moves[i], was_first_double_move);
+		moved = board(moves[i] & 0xff);
+		was_first_double_move = moved->can_be_en_passant ();
+		eaten = simulate_move (moves[i]);
 		if (eaten) {
 			actual_score = values[eaten->get_type ()];
 		} else {
 			actual_score = 0;
 		}
 
-		actual_score += mini (depth - 1, alpha, beta);
+		if (is_draw) {
+			actual_score = 0;
+		} else {
+			actual_score += mini (depth - 1, alpha, beta, best_move);
+		}
 		if ((actual_score & 0xff) > (best_score & 0xff)) {
 			best_score = (actual_score & 0xff) | (moves[i] << 16);
 			if ((best_score & 0xff) >= beta) {
@@ -1200,9 +1163,7 @@ int Game::maxi (int depth, int alpha, int beta) {
 				undo_simulated_move (moves[i], eaten);
 				moves_without_take_or_pawn_move = prev_moves_without_take_or_pawn_move;
 				last_moved = prev_last_moved;
-				if (eaten && eaten->get_type () == PAWN) {
-					eaten->set_prev_first_double_move (was_first_double_move);
-				}
+				moved->set_prev_first_double_move (was_first_double_move);
 				break;
 			}
 			if ((best_score & 0xff) < alpha) {
@@ -1214,18 +1175,16 @@ int Game::maxi (int depth, int alpha, int beta) {
 		undo_simulated_move (moves[i], eaten);
 		moves_without_take_or_pawn_move = prev_moves_without_take_or_pawn_move;
 		last_moved = prev_last_moved;
-		if (eaten && eaten->get_type () == PAWN) {
-			eaten->set_prev_first_double_move (was_first_double_move);
-		}
+		moved->set_prev_first_double_move (was_first_double_move);
 	}
 
 	return best_score;
 }
-Piece* Game::simulate_move (int move, bool& was_first_double_move) {
+Piece* Game::simulate_move (int move) {
 	int from = move & 0xff;
 	int to = move >> 8;
 	moves_without_take_or_pawn_move++;
-	turn ^= 1;
+	turn = !turn;
 	Piece* eaten;
 
 	if (board(from)->get_type () == KING) {
@@ -1258,11 +1217,7 @@ Piece* Game::simulate_move (int move, bool& was_first_double_move) {
 			eaten = board[(from >> 4) | (to & 0x7)];
 			board[(from >> 4) | (to & 0x7)] = nullptr;
 			remaining_pieces[turn]--;
-		} 
-		// remember double first move
-		else {
-			was_first_double_move = board(from)->can_be_en_passant ();
-		}		
+		}
 	} else 
 	// promotion
 	if (to >> 8) {
@@ -1295,7 +1250,7 @@ Piece* Game::simulate_move (int move, bool& was_first_double_move) {
 void Game::undo_simulated_move (int move, Piece* eaten) {
 	int from = move & 0xff;
 	int to = move >> 8;
-	turn ^= 1;
+	turn = !turn;
 
 	if (board(to & 0xff)->get_type () == KING) {
 		// short-castle
