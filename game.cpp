@@ -1074,16 +1074,23 @@ int Game::mini (int depth, int alpha, int beta, int* best_move) {
 	int prev_moves_without_take_or_pawn_move = moves_without_take_or_pawn_move;
 	int prev_last_moved = last_moved;
 	bool was_first_double_move;
+	bool had_moved;
+	int previous_type;	// promotion score
 
 	for (int i = 0; i < n_moves; i++) {
 		// simulate move
 		moved = board(moves[i] & 0xff);
 		was_first_double_move = moved->can_be_en_passant ();
+		had_moved = moved->is_first_move ();
+		previous_type = moved->get_type ();
 		eaten = simulate_move (moves[i]);
 		if (eaten) {
 			actual_score = -values[eaten->get_type ()];
 		} else {
 			actual_score = 0;
+		}
+		if (previous_type == PAWN && moved->get_type () != PAWN) {
+			actual_score -= values[moved->get_type ()] - 1;
 		}
 
 		if (is_draw) {
@@ -1100,6 +1107,9 @@ int Game::mini (int depth, int alpha, int beta, int* best_move) {
 				moves_without_take_or_pawn_move = prev_moves_without_take_or_pawn_move;
 				last_moved = prev_last_moved;
 				moved->set_prev_first_double_move (was_first_double_move);
+				if (!had_moved) {
+					moved->undo_first_move ();
+				}
 				break;
 			}
 			if (best_score > beta) {
@@ -1112,6 +1122,9 @@ int Game::mini (int depth, int alpha, int beta, int* best_move) {
 		moves_without_take_or_pawn_move = prev_moves_without_take_or_pawn_move;
 		last_moved = prev_last_moved;
 		moved->set_prev_first_double_move (was_first_double_move);
+		if (!had_moved) {
+			moved->undo_first_move ();
+		}
 	}
 
 	if (best_move) {
@@ -1143,16 +1156,23 @@ int Game::maxi (int depth, int alpha, int beta, int* best_move) {
 	int prev_moves_without_take_or_pawn_move = moves_without_take_or_pawn_move;
 	int prev_last_moved = last_moved;
 	bool was_first_double_move;
+	bool had_moved;
+	int previous_type;	// promotion score
 
 	for (int i = 0; i < n_moves; i++) {
 		// simulate move
 		moved = board(moves[i] & 0xff);
 		was_first_double_move = moved->can_be_en_passant ();
+		had_moved = moved->is_first_move ();
+		previous_type = moved->get_type ();
 		eaten = simulate_move (moves[i]);
 		if (eaten) {
 			actual_score = values[eaten->get_type ()];
 		} else {
 			actual_score = 0;
+		}
+		if (previous_type == PAWN && moved->get_type () != PAWN) {
+			actual_score += values[moved->get_type ()] - 1;
 		}
 
 		if (is_draw) {
@@ -1169,6 +1189,9 @@ int Game::maxi (int depth, int alpha, int beta, int* best_move) {
 				moves_without_take_or_pawn_move = prev_moves_without_take_or_pawn_move;
 				last_moved = prev_last_moved;
 				moved->set_prev_first_double_move (was_first_double_move);
+				if (!had_moved) {
+					moved->undo_first_move ();
+				}
 				break;
 			}
 			if (best_score < alpha) {
@@ -1181,6 +1204,9 @@ int Game::maxi (int depth, int alpha, int beta, int* best_move) {
 		moves_without_take_or_pawn_move = prev_moves_without_take_or_pawn_move;
 		last_moved = prev_last_moved;
 		moved->set_prev_first_double_move (was_first_double_move);
+		if (!had_moved) {
+			moved->undo_first_move ();
+		}
 	}
 
 	if (best_move) {
@@ -1265,7 +1291,6 @@ void Game::undo_simulated_move (int move, Piece* eaten) {
 			board(from + 1)->move (from + 3);
 			board(from + 3) = board(from + 1);
 			board(from + 1) = nullptr;
-			board(from)->undo_first_move ();
 			board(from + 3)->undo_first_move ();
 			is_checkmate = false;
 			is_draw = false;
@@ -1279,7 +1304,6 @@ void Game::undo_simulated_move (int move, Piece* eaten) {
 			board(from - 1)->move (from - 4);
 			board(from - 4) = board(from - 1);
 			board(from - 1) = nullptr;
-			board(from)->undo_first_move ();
 			board(from - 4)->undo_first_move ();
 			is_checkmate = false;
 			is_draw = false;
