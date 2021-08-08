@@ -83,8 +83,8 @@ void Game::move_piece (int from, int to) {
 
 	// en passant
 	if (board(from)->get_type () == PAWN && (from & 0x7) != (to & 0x7) && !board(to & 0xff)) {
-		free (board[(from >> 4) | (to & 0x7)]);
-		board[(from >> 4) | (to & 0x7)] = nullptr;
+		free (board[((from >> 1) & 0b111000) | (to & 0b000111)]);
+		board[((from >> 1) & 0b111000) | (to & 0b000111)] = nullptr;
 		remaining_pieces[turn]--;
 	} else 
 	// promotion
@@ -1219,13 +1219,10 @@ Piece* Game::simulate_move (int move) {
 	}
 
 	// en passant
-	if (board(from)->get_type () == PAWN) {
-		// en passant
-		if ((from & 0x7) != (to & 0x7) && !board(to & 0xff)) {
-			eaten = board[(from >> 4) | (to & 0x7)];
-			board[(from >> 4) | (to & 0x7)] = nullptr;
-			remaining_pieces[turn]--;
-		}
+	if (board(from)->get_type () == PAWN && (from & 0x7) != (to & 0x7) && !board(to & 0xff)) {
+		eaten = board[((from >> 1) & 0b111000) | (to & 0b000111)];
+		board[((from >> 1) & 0b111000) | (to & 0b000111)] = nullptr;
+		remaining_pieces[turn]--;
 	} else 
 	// promotion
 	if (to >> 8) {
@@ -1258,7 +1255,6 @@ Piece* Game::simulate_move (int move) {
 void Game::undo_simulated_move (int move, Piece* eaten) {
 	int from = move & 0xff;
 	int to = move >> 8;
-	turn = !turn;
 
 	if (board(to & 0xff)->get_type () == KING) {
 		// short-castle
@@ -1271,6 +1267,8 @@ void Game::undo_simulated_move (int move, Piece* eaten) {
 			board(from + 1) = nullptr;
 			board(from)->undo_first_move ();
 			board(from + 3)->undo_first_move ();
+			is_checkmate = false;
+			is_draw = false;
 			return;
 		} else 
 		// long castle
@@ -1283,6 +1281,8 @@ void Game::undo_simulated_move (int move, Piece* eaten) {
 			board(from - 1) = nullptr;
 			board(from)->undo_first_move ();
 			board(from - 4)->undo_first_move ();
+			is_checkmate = false;
+			is_draw = false;
 			return;
 		}
 	}
@@ -1299,9 +1299,11 @@ void Game::undo_simulated_move (int move, Piece* eaten) {
 	board(to) = nullptr;
 
 	if (eaten) {
+		remaining_pieces[turn]++;
 		board(eaten->get_pos ()) = eaten;
 	}
 
+	turn = !turn;
 	is_checkmate = false;
 	is_draw = false;
 }
