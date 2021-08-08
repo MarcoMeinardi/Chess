@@ -1294,6 +1294,7 @@ void Game::undo_simulated_move (int move, Piece* eaten) {
 			board(from + 3)->undo_first_move ();
 			is_checkmate = false;
 			is_draw = false;
+			turn = !turn;
 			return;
 		} else 
 		// long castle
@@ -1307,6 +1308,7 @@ void Game::undo_simulated_move (int move, Piece* eaten) {
 			board(from - 4)->undo_first_move ();
 			is_checkmate = false;
 			is_draw = false;
+			turn = !turn;
 			return;
 		}
 	}
