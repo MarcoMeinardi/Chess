@@ -10,6 +10,22 @@ using namespace std;
 #define WHITE 0
 #define BLACK 1
 
+#define COORD(y, x) ((y << 3) | (x & 0x07))
+#define PROMOTE(type) (type << 8)
+#define GET_PROMOTION(move) (move >> 8)
+#define CUT_PROMOTION(pos) (pos & 0b00111111)
+#define COMPRESS_MOVE(move1, move2) (move1 | (move2 << 8))
+#define DECOMPRESS_MOVE(move, move1, move2) move1 = move & 0xff, move2 = move >> 8
+
+#define UP			(1 << 3)
+#define RIGHT		(1 & 0x07)
+#define DOWN		-(1 << 3)
+#define LEFT		-(1 & 0x07)
+#define RIGHT_UP	RIGHT + UP
+#define RIGHT_DOWN	RIGHT + DOWN
+#define LEFT_DOWN	LEFT  + DOWN
+#define LEFT_UP		LEFT  + UP
+
 #define MAX_DEPTH 5
 #define INF 255
 
@@ -20,6 +36,15 @@ const char values[33] = {0,
 	1, 0, 0, 0, 0, 0, 0, 0, 						// Pawn
 	9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	// Queen
 	5												// Rook
+};
+
+const char pieces_repr[33] = {'.', 
+	'B', 
+	'K', '.', 
+	'k', '.', '.', '.', 
+	'P', '.', '.', '.', '.', '.', '.', '.', 
+	'Q', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 
+	'R'
 };
 
 class Game {

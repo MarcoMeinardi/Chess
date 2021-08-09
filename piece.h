@@ -7,6 +7,9 @@
 #define QUEEN	(1 << 4)
 #define ROOK	(1 << 5)
 
+#define Y(pos) (pos >> 3)
+#define X(pos) (pos & 0x07)
+
 class Piece {
 private:
 	int pos;
@@ -66,7 +69,7 @@ public:
 	void move (int to) {
 		has_moved = true;
 		first_double_move = false;
-		if (type == PAWN && (to >> 4) != (pos >> 4) + 1 && (to >> 4) != (pos >> 4) - 1) {
+		if (type == PAWN && Y (to) != Y (to) + 1 && Y (to) !=  Y (to) - 1) {
 			first_double_move = true;
 		}
 		pos = to;

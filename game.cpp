@@ -1,37 +1,37 @@
 #include "./game.h"
 
 Game::Game () {
-	board[(0 << 3) | (0 & 0x7)] = new Piece	((0 << 4) | (0 & 0xf), WHITE, ROOK);
-	board[(0 << 3) | (1 & 0x7)] = new Piece	((0 << 4) | (1 & 0xf), WHITE, KNIGHT);
-	board[(0 << 3) | (2 & 0x7)] = new Piece	((0 << 4) | (2 & 0xf), WHITE, BISHOP);
-	board[(0 << 3) | (3 & 0x7)] = new Piece	((0 << 4) | (3 & 0xf), WHITE, QUEEN);
-	board[(0 << 3) | (4 & 0x7)] = new Piece	((0 << 4) | (4 & 0xf), WHITE, KING);
-	board[(0 << 3) | (5 & 0x7)] = new Piece	((0 << 4) | (5 & 0xf), WHITE, BISHOP);
-	board[(0 << 3) | (6 & 0x7)] = new Piece	((0 << 4) | (6 & 0xf), WHITE, KNIGHT);
-	board[(0 << 3) | (7 & 0x7)] = new Piece	((0 << 4) | (7 & 0xf), WHITE, ROOK);
+	board[COORD (0, 0)] = new Piece	(COORD (0, 0), WHITE, ROOK);
+	board[COORD (0, 1)] = new Piece	(COORD (0, 1), WHITE, KNIGHT);
+	board[COORD (0, 2)] = new Piece	(COORD (0, 2), WHITE, BISHOP);
+	board[COORD (0, 3)] = new Piece	(COORD (0, 3), WHITE, QUEEN);
+	board[COORD (0, 4)] = new Piece	(COORD (0, 4), WHITE, KING);
+	board[COORD (0, 5)] = new Piece	(COORD (0, 5), WHITE, BISHOP);
+	board[COORD (0, 6)] = new Piece	(COORD (0, 6), WHITE, KNIGHT);
+	board[COORD (0, 7)] = new Piece	(COORD (0, 7), WHITE, ROOK);
 
 	for (int i = 0; i < 8; i++) {
-		board[(1 << 3) | (i & 0x7)] = new Piece ((1 << 4) | (i & 0xf), WHITE, PAWN);
+		board[COORD (1, i)] = new Piece (COORD (1, i), WHITE, PAWN);
 	}
 
 	for (int i = 2; i < 6; i++) {
 		for (int j = 0; j < 8; j++) {
-			board[(i << 3) | (j & 0x7)] = nullptr;
+			board[COORD (i, j)] = nullptr;
 		}
 	}
 
 	for (int i = 0; i < 8; i++) {
-		board[(6 << 3) | (i & 0x7)] = new Piece ((6 << 4) | (i & 0xf), BLACK, PAWN);
+		board[COORD (6, i)] = new Piece (COORD (6, i), BLACK, PAWN);
 	}
     
-	board[(7 << 3) | (0 & 0x7)] = new Piece ((7 << 4) | (0 & 0xf), BLACK, ROOK);
-	board[(7 << 3) | (1 & 0x7)] = new Piece ((7 << 4) | (1 & 0xf), BLACK, KNIGHT);
-	board[(7 << 3) | (2 & 0x7)] = new Piece ((7 << 4) | (2 & 0xf), BLACK, BISHOP);
-	board[(7 << 3) | (3 & 0x7)] = new Piece ((7 << 4) | (3 & 0xf), BLACK, QUEEN);
-	board[(7 << 3) | (4 & 0x7)] = new Piece ((7 << 4) | (4 & 0xf), BLACK, KING);
-	board[(7 << 3) | (5 & 0x7)] = new Piece ((7 << 4) | (5 & 0xf), BLACK, BISHOP);
-	board[(7 << 3) | (6 & 0x7)] = new Piece ((7 << 4) | (6 & 0xf), BLACK, KNIGHT);
-	board[(7 << 3) | (7 & 0x7)] = new Piece ((7 << 4) | (7 & 0xf), BLACK, ROOK);
+	board[COORD (7, 0)] = new Piece (COORD (7, 0), BLACK, ROOK);
+	board[COORD (7, 1)] = new Piece (COORD (7, 1), BLACK, KNIGHT);
+	board[COORD (7, 2)] = new Piece (COORD (7, 2), BLACK, BISHOP);
+	board[COORD (7, 3)] = new Piece (COORD (7, 3), BLACK, QUEEN);
+	board[COORD (7, 4)] = new Piece (COORD (7, 4), BLACK, KING);
+	board[COORD (7, 5)] = new Piece (COORD (7, 5), BLACK, BISHOP);
+	board[COORD (7, 6)] = new Piece (COORD (7, 6), BLACK, KNIGHT);
+	board[COORD (7, 7)] = new Piece (COORD (7, 7), BLACK, ROOK);
 
 	turn = WHITE;
 	last_moved = -1;
@@ -43,8 +43,8 @@ Game::Game () {
 	is_checkmate = false;
 	is_draw = false;
 
-	kings[WHITE] = board [(0 << 3) | (4 & 0x7)];
-	kings[BLACK] = board [(7 << 3) | (4 & 0x7)];
+	kings[WHITE] = board [COORD (0, 4)];
+	kings[BLACK] = board [COORD (7, 4)];
 }
 Game::~Game () {
 	for (int i = 0; i < 64; i++) {
@@ -58,56 +58,56 @@ void Game::move_piece (int from, int to) {
 	moves_without_take_or_pawn_move++;
 	turn = !turn;
 
-	if (board(from)->get_type () == KING) {
+	if (board[from]->get_type () == KING) {
 		// short-castle
 		if (to == from + 2) {
-			board(from)->move (to);
-			board(to) = board(from);
-			board(from) = nullptr;
-			board(from + 3)->move (from + 1);
-			board(from + 1) = board(from + 3);
-			board(from + 3) = nullptr;
+			board[from]->move (to);
+			board[to] = board[from];
+			board[from] = nullptr;
+			board[from + 3]->move (from + 1);
+			board[from + 1] = board[from + 3];
+			board[from + 3] = nullptr;
 			return;
 		} else 
 		// long castle
 		if (to == from - 2) {
-			board(from)->move (to);
-			board(to) = board(from);
-			board(from) = nullptr;
-			board(from - 4)->move (from - 1);
-			board(from - 1) = board(from - 4);
-			board(from - 4) = nullptr;
+			board[from]->move (to);
+			board[to] = board[from];
+			board[from] = nullptr;
+			board[from - 4]->move (from - 1);
+			board[from - 1] = board[from - 4];
+			board[from - 4] = nullptr;
 			return;
 		}
 	}
 
 	// en passant
-	if (board(from)->get_type () == PAWN && (from & 0x7) != (to & 0x7) && !board(to & 0xff)) {
-		free (board[((from >> 1) & 0b111000) | (to & 0b000111)]);
-		board[((from >> 1) & 0b111000) | (to & 0b000111)] = nullptr;
+	if (board[from]->get_type () == PAWN && X (from) != X (to) && !board[CUT_PROMOTION (to)]) {
+		free (board[(from & 0b111000) | X (to)]);	// (Y (from) << 3) | X (to)
+		board[(from & 0b111000) | X (to)] = nullptr;
 		remaining_pieces[turn]--;
 	} else 
 	// promotion
-	if (to >> 8) {
-		board(from)->promote (to >> 8);
+	if (GET_PROMOTION (to)) {
+		board[from]->promote (GET_PROMOTION (to));
 	}
 
-	to &= 0xff;
+	to = CUT_PROMOTION (to);
 	last_moved = to;
 
-	if (board(from)->get_type () == PAWN) {
+	if (board[from]->get_type () == PAWN) {
 		moves_without_take_or_pawn_move = 0;
 	}
 
-	if (board(to)) {
-		free (board(to));
+	if (board[to]) {
+		free (board[to]);
 		moves_without_take_or_pawn_move = 0;
 		remaining_pieces[turn]--;
 		check_draw ();
 	}
-	board(from)->move (to);
-	board(to) = board(from);
-	board(from) = nullptr;
+	board[from]->move (to);
+	board[to] = board[from];
+	board[from] = nullptr;
 
 	if (moves_without_take_or_pawn_move == 100) {
 		is_draw = true;
@@ -121,22 +121,22 @@ int Game::load_moves (int* moves) {
 		if (board[i] && board[i]->get_owner () == turn) {
 			switch (board[i]->get_type ()) {
 			case BISHOP:
-				get_bishop_moves (((i << 1) & 0b1110000) | (i & 0b111), moves);
+				get_bishop_moves	(i, moves);
 				break;
 			case KING:
-				get_king_moves (((i << 1) & 0b1110000) | (i & 0b111), moves);
+				get_king_moves		(i, moves);
 				break;
 			case KNIGHT:
-				get_knight_moves (((i << 1) & 0b1110000) | (i & 0b111), moves);
+				get_knight_moves	(i, moves);
 				break;
 			case PAWN:
-				get_pawn_moves (((i << 1) & 0b1110000) | (i & 0b111), moves);
+				get_pawn_moves		(i, moves);
 				break;
 			case QUEEN:
-				get_queen_moves (((i << 1) & 0b1110000) | (i & 0b111), moves);
+				get_queen_moves		(i, moves);
 				break;
 			case ROOK:
-				get_rook_moves (((i << 1) & 0b1110000) | (i & 0b111), moves);
+				get_rook_moves		(i, moves);
 				break;
 			}
 		}
@@ -155,30 +155,30 @@ int Game::load_moves (int* moves) {
 void Game::add_move (int from, int to, int*& moves, Piece* eaten = nullptr) {
 	// simulate move
 	if (eaten) {
-		board(eaten->get_pos ()) = nullptr;
+		board[eaten->get_pos ()] = nullptr;
 	}
 	// promote
-	if (to >> 8) {
-		board(from)->promote (to >> 8);
+	if (GET_PROMOTION (to)) {
+		board[from]->promote (GET_PROMOTION (to));
 	}
-	board(from)->set_pos (to & 0xff);
-	board(to & 0xff) = board(from);
-	board(from) = nullptr;
+	board[from]->set_pos (CUT_PROMOTION (to));
+	board[CUT_PROMOTION (to)] = board[from];
+	board[from] = nullptr;
 
 	if (!is_check (kings[turn]->get_pos ())) {
-		*(moves++) = from | (to << 8);
+		*(moves++) = COMPRESS_MOVE (from, to);
 	}
 
 	// undo move
-	board(to & 0xff)->set_pos (from);
-	board(from) = board(to & 0xff);
-	board(to & 0xff) = nullptr;
+	board[CUT_PROMOTION (to)]->set_pos (from);
+	board[from] = board[CUT_PROMOTION (to)];
+	board[CUT_PROMOTION (to)] = nullptr;
 	if (eaten) {
-		board(eaten->get_pos ()) = eaten;
+		board[eaten->get_pos ()] = eaten;
 	}
 	// undo promote
-	if (to >> 8) {
-		board(from)->undo_promote ();
+	if (GET_PROMOTION (to)) {
+		board[from]->undo_promote ();
 	}
 }
 bool Game::is_check (int pos) {
@@ -222,9 +222,10 @@ void Game::get_bishop_moves (int pos, int*& moves) {
 	Piece* P;
 
 	// rigth-up
-	p = pos + ((1 << 4) | (1 & 0xf));
-	while (!(p & 0b10001000)) {
-		P = board(p);
+	p = pos;
+	while (Y (p) != 0b111 && X (p) != 0b111) {
+		p += RIGHT_UP;
+		P = board[p];
 		if (P) {
 			if (P->get_owner () != turn) {
 				add_move (pos, p, moves, P);
@@ -232,13 +233,13 @@ void Game::get_bishop_moves (int pos, int*& moves) {
 			break;
 		}
 		add_move (pos, p, moves);
-		p += (1 << 4) | (1 & 0xf);
 	}
 
 	// right-down
-	p = pos + (-(1 << 4) | (1 & 0xf));
-	while (!(p & 0b10001000)) {
-		P = board (p);
+	p = pos;
+	while (Y (p) != 0b000 && X (p) != 0b111) {
+		p += RIGHT_DOWN;
+		P = board [p];
 		if (P) {
 			if (P->get_owner () != turn) {
 				add_move (pos, p, moves, P);
@@ -246,13 +247,13 @@ void Game::get_bishop_moves (int pos, int*& moves) {
 			break;
 		}
 		add_move (pos, p, moves);
-		p += -(1 << 4) | (1 & 0xf);
 	}
 
 	// left-down
-	p = pos + (-(1 << 4) - (1 & 0xf));
-	while (!(p & 0b10001000)) {
-		P = board (p);
+	p = pos;
+	while (Y (p) != 0b000 && X (p) != 0b000) {
+		p += LEFT_DOWN;
+		P = board [p];
 		if (P) {
 			if (P->get_owner () != turn) {
 				add_move (pos, p, moves, P);
@@ -260,13 +261,13 @@ void Game::get_bishop_moves (int pos, int*& moves) {
 			break;
 		}
 		add_move (pos, p, moves);
-		p += -(1 << 4) - (1 & 0xf);
 	}
 
 	// left-up
-	p = pos + ((1 << 4) - (1 & 0xf));
-	while (!(p & 0b10001000)) {
-		P = board(p);
+	p = pos;
+	while (Y (p) != 0b111 && X (p) != 0b000) {
+		p += LEFT_UP;
+		P = board[p];
 		if (P) {
 			if (P->get_owner () != turn) {
 				add_move (pos, p, moves, P);
@@ -274,100 +275,98 @@ void Game::get_bishop_moves (int pos, int*& moves) {
 			break;
 		}
 		add_move (pos, p, moves);
-		p += (1 << 4) - (1 & 0xf);
 	}
 }
-void Game::get_king_moves (int pos, int*& moves) {
-	int p;
+void Game::get_king_moves (int pos, int*& moves) {	int p;
 	Piece* P;
 
 	// up
-	p = pos + (1 << 4);
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) != 0b111) {
+		p = pos + UP;
+		P = board[p];
 		if (!P || P->get_owner () != turn) {
 			add_move (pos, p, moves, P);
 		}
 	}
 
-	// up-right
-	p = pos + ((1 << 4) | (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	// right-up
+	if (Y (pos) != 0b111 && X (pos) != 0b111) {
+		p = pos + RIGHT_UP; 
+		P = board[p];
 		if (!P || P->get_owner () != turn) {
 			add_move (pos, p, moves, P);
 		}
 	}
 
 	// right
-	p = pos + 1;
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (X (pos) != 0b111) {
+		p = pos + RIGHT;
+		P = board[p];
 		if (!P || P->get_owner () != turn) {
 			add_move (pos, p, moves, P);
 		}
 	}
 
-	// down-right
-	p = pos + (-(1 << 4) | (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	// right-down
+	if (Y (pos) != 0b000 && X (pos) != 0b111) {
+		p = pos + RIGHT_DOWN;
+		P = board[p];
 		if (!P || P->get_owner () != turn) {
 			add_move (pos, p, moves, P);
 		}
 	}
 
 	// down
-	p = pos - (1 << 4);
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) != 0b000) {
+		p = pos + DOWN;
+		P = board[p];
 		if (!P || P->get_owner () != turn) {
 			add_move (pos, p, moves, P);
 		}
 	}
 
-	// down-left
-	p = pos + (-(1 << 4) - (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	// left-down
+	if (Y (pos) != 0b000 && X (pos) != 0b000) {
+		p = pos + LEFT_DOWN;
+		P = board[p];
 		if (!P || P->get_owner () != turn) {
 			add_move (pos, p, moves, P);
 		}
 	}
 
 	// left
-	p = pos - 1;
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (X (pos) != 0b000) {
+		p = pos + LEFT;
+		P = board[p];
 		if (!P || P->get_owner () != turn) {
 			add_move (pos, p, moves, P);
 		}
 	}
 
 	// left-up
-	p = pos + ((1 << 4) - (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) != 0b111 && X (pos) != 0b000) {
+		p = pos + LEFT_UP;
+		P = board[p];
 		if (!P || P->get_owner () != turn) {
 			add_move (pos, p, moves, P);
 		}
 	}
 
 	// short-castle
-	if (board(pos)->is_first_move () && !board(pos + 1) && !board(pos + 2)) {
-		P = board(pos + 3);
+	if (board[pos]->is_first_move () && !board[pos + 1 * RIGHT] && !board[pos + 2 * RIGHT]) {
+		P = board[pos + 3 * RIGHT];
 		if (P && P->get_type () == ROOK && P->is_first_move()) {
-			if (!is_check (pos) && !is_check (pos + 1)) {
-				add_move (pos, pos + 2, moves);
+			if (!is_check (pos) && !is_check (pos + 1 * RIGHT)) {
+				add_move (pos, pos + 2 * RIGHT, moves);
 			}
 		}
 	}
 	// long-castle
-	if (board(pos)->is_first_move () && !board(pos - 1) && !board(pos - 2) && !board(pos - 3)) {
-		P = board(pos - 4);
+	if (board[pos]->is_first_move () && !board[pos + 1 * LEFT] && !board[pos + 2 * LEFT] && !board[pos + 3 * LEFT]) {
+		P = board[pos + 4 * LEFT];
 		if (P && P->get_type () == ROOK && P->is_first_move()) {
-			if (!is_check (pos) && !is_check (pos - 1)) {
-				add_move (pos, pos - 2, moves);
+			if (!is_check (pos) && !is_check (pos + 1 * LEFT)) {
+				add_move (pos, pos + 2 * LEFT, moves);
 			}
 		}
 	}
@@ -377,72 +376,72 @@ void Game::get_knight_moves (int pos, int*& moves) {
 	Piece* P;
 
 	// up-right
-	p = pos + ((2 << 4) | (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) < 0b110 && X (pos) != 0b111) {
+		p = pos + UP * 2 + RIGHT;
+		P = board[p];
 		if (!P || P->get_owner () != turn) {
 			add_move (pos, p, moves, P);
 		}
 	}
 
 	// right-up
-	p = pos + ((1 << 4) | (2 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) != 0b111 && X (pos) < 0b110) {
+		p = pos + RIGHT * 2 + UP;
+		P = board[p];
 		if (!P || P->get_owner () != turn) {
 			add_move (pos, p, moves, P);
 		}
 	}
 
 	// right-down
-	p = pos + (-(1 << 4) | (2 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) != 0b000 && X (pos) < 0b110) {
+		p = pos + RIGHT * 2 + DOWN;
+		P = board[p];
 		if (!P || P->get_owner () != turn) {
 			add_move (pos, p, moves, P);
 		}
 	}
 
 	// down-right
-	p = pos + (-(2 << 4) | (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) > 0b001 && X (pos) != 0b111) {
+		p = pos + DOWN * 2 + RIGHT;
+		P = board[p];
 		if (!P || P->get_owner () != turn) {
 			add_move (pos, p, moves, P);
 		}
 	}
 
 	// down-left
-	p = pos + (-(2 << 4) - (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) > 0b001 && X (pos) != 0b000) {
+		p = pos + DOWN * 2 + RIGHT;
+		P = board[p];
 		if (!P || P->get_owner () != turn) {
 			add_move (pos, p, moves, P);
 		}
 	}
 
 	// left-down
-	p = pos + (-(1 << 4) - (2 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) != 0b000 && X (pos) > 0b001) {
+		p = pos + LEFT * 2 + DOWN;
+		P = board[p];
 		if (!P || P->get_owner () != turn) {
 			add_move (pos, p, moves, P);
 		}
 	}
 
 	// left-up
-	p = pos + ((1 << 4) - (2 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) != 0b111 && X (pos) > 0b001) {
+		p = pos + LEFT * 2 + UP;
+		P = board[p];
 		if (!P || P->get_owner () != turn) {
 			add_move (pos, p, moves, P);
 		}
 	}
 
 	// up-left
-	p = pos + ((2 << 4) - (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) < 0b110 && X (pos) != 0b000) {
+		p = pos + UP * 2 + LEFT;
+		P = board[p];
 		if (!P || P->get_owner () != turn) {
 			add_move (pos, p, moves, P);
 		}
@@ -451,48 +450,53 @@ void Game::get_knight_moves (int pos, int*& moves) {
 void Game::get_pawn_moves (int pos, int*& moves) {
 	int p;
 	Piece* P;
+
+	// don't need to check up, because of promotion
 	if (turn == WHITE) {
 		// move
-		p = pos + (1 << 4);
-		if (!(p & 0b10001000) && !board(p)) {
-			if ((p >> 4) == 7) {
-				add_move (pos, p | (QUEEN << 8), moves);
-				add_move (pos, p | (KNIGHT << 8), moves);
-				add_move (pos, p | (ROOK << 8), moves);
-				add_move (pos, p | (BISHOP << 8), moves);
+		p = pos + UP;
+		if (!board[p]) {
+			if (Y (p) == 0b111) {
+				add_move (pos, p | PROMOTE (QUEEN), moves);
+				add_move (pos, p | PROMOTE (KNIGHT), moves);
+				add_move (pos, p | PROMOTE (ROOK), moves);
+				add_move (pos, p | PROMOTE (BISHOP), moves);
 			} else {
 				add_move (pos, p, moves);
-				p += (1 << 4);
-				if ((pos >> 4) == 1  && !board(p)) {
-					add_move (pos, p, moves);	
+				if (Y (pos) == 0b001) {
+					p += UP;
+					if (!board[p]) {
+						add_move (pos, p, moves);
+					}
 				}
 			}
 		}
 
-		// take
-		p = pos + ((1 << 4) | (1 & 0xf));
-		if (!(p & 0b10001000)) {
-			P = board(p);
+		// take right
+		if (X (pos) != 0b111) {	
+			p = pos + RIGHT_UP;
+			P = board[p];
 			if (P && P->get_owner () == BLACK) {
-				if ((p >> 4) == 7) {
-					add_move (pos, p | (QUEEN << 8), moves, P);
-					add_move (pos, p | (KNIGHT << 8), moves, P);
-					add_move (pos, p | (ROOK << 8), moves, P);
-					add_move (pos, p | (BISHOP << 8), moves, P);
+				if (Y (p) == 0b111) {
+					add_move (pos, p | PROMOTE (QUEEN), moves, P);
+					add_move (pos, p | PROMOTE (KNIGHT), moves, P);
+					add_move (pos, p | PROMOTE (ROOK), moves, P);
+					add_move (pos, p | PROMOTE (BISHOP), moves, P);
 				} else {
 					add_move (pos, p, moves, P);
 				}
 			}
 		}
-		p = pos + ((1 << 4) - (1 & 0xf));
-		if (!(p & 0b10001000)) {
-			P = board(p);
+		// take left
+		if (X (pos) != 0b000) {
+			p = pos + LEFT_UP;
+			P = board[p];
 			if (P && P->get_owner () == BLACK) {
-				if ((p >> 4) == 7) {
-					add_move (pos, p | (QUEEN << 8), moves, P);
-					add_move (pos, p | (KNIGHT << 8), moves, P);
-					add_move (pos, p | (ROOK << 8), moves, P);
-					add_move (pos, p | (BISHOP << 8), moves, P);
+				if (Y (p) == 0b111) {
+					add_move (pos, p | PROMOTE (QUEEN), moves, P);
+					add_move (pos, p | PROMOTE (KNIGHT), moves, P);
+					add_move (pos, p | PROMOTE (ROOK), moves, P);
+					add_move (pos, p | PROMOTE (BISHOP), moves, P);
 				} else {
 					add_move (pos, p, moves, P);
 				}
@@ -500,59 +504,62 @@ void Game::get_pawn_moves (int pos, int*& moves) {
 		}
 
 		// en passant
-		if (last_moved == pos + 1) {
-			P = board(last_moved);
+		if (last_moved == pos + RIGHT) {
+			P = board[last_moved];
 			if (P->get_owner () == BLACK && P->can_be_en_passant ()) {
-				add_move (pos, pos + ((1 << 4) | 1), moves, P);
+				add_move (pos, pos + RIGHT_UP, moves, P);
 			}
-		} else if (last_moved == pos - 1) {
-			P = board(last_moved);
+		} else if (last_moved == pos + LEFT) {
+			P = board[last_moved];
 			if (P->get_owner () == BLACK && P->can_be_en_passant ()) {
-				add_move (pos, pos + ((1 << 4) - 1), moves, P);
+				add_move (pos, pos + LEFT_UP, moves, P);
 			}
 		}
 	} else {
 		// move
-		p = pos - (1 << 4);
-		if (!(p & 0b10001000) && !board(p)) {
-			if ((p >> 4) == 0) {
-				add_move (pos, p | (QUEEN << 8), moves);
-				add_move (pos, p | (KNIGHT << 8), moves);
-				add_move (pos, p | (ROOK << 8), moves);
-				add_move (pos, p | (BISHOP << 8), moves);
+		p = pos + DOWN;
+		if (!board[p]) {
+			if (Y (p) == 0b000) {
+				add_move (pos, p | PROMOTE (QUEEN), moves);
+				add_move (pos, p | PROMOTE (KNIGHT), moves);
+				add_move (pos, p | PROMOTE (ROOK), moves);
+				add_move (pos, p | PROMOTE (BISHOP), moves);
 			} else {
 				add_move (pos, p, moves);
-				p -= (1 << 4);
-				if ((pos >> 4) == 6 && !board(p)) {
-					add_move (pos, p, moves);
+				if (Y (pos) == 0b110) {
+					p += DOWN;
+					if (!board[p]) {
+						add_move (pos, p, moves);
+					}
 				}
 			}
 		}
 
-		// take
-		p = pos + (-(1 << 4) | (1 & 0xf));
-		if (!(p & 0b10001000)) {
-			P = board (p);
+		// take right
+		if (X (pos) != 0b111) {	
+			p = pos + RIGHT_DOWN;
+			P = board[p];
 			if (P && P->get_owner () == WHITE) {
-				if ((p >> 4) == 0) {
-					add_move (pos, p | (QUEEN << 8), moves, P);
-					add_move (pos, p | (KNIGHT << 8), moves, P);
-					add_move (pos, p | (ROOK << 8), moves, P);
-					add_move (pos, p | (BISHOP << 8), moves, P);
+				if (Y (p) == 0b000) {
+					add_move (pos, p | PROMOTE (QUEEN), moves, P);
+					add_move (pos, p | PROMOTE (KNIGHT), moves, P);
+					add_move (pos, p | PROMOTE (ROOK), moves, P);
+					add_move (pos, p | PROMOTE (BISHOP), moves, P);
 				} else {
 					add_move (pos, p, moves, P);
 				}
 			}
 		}
-		p = pos + (-(1 << 4) - (1 & 0xf));
-		if (!(p & 0b10001000)) {
-			P = board (p);
+		// take left
+		if (X (pos) != 0b000) {
+			p = pos + LEFT_DOWN;
+			P = board[p];
 			if (P && P->get_owner () == WHITE) {
-				if ((p >> 4) == 0) {
-					add_move (pos, p | (QUEEN << 8), moves, P);
-					add_move (pos, p | (KNIGHT << 8), moves, P);
-					add_move (pos, p | (ROOK << 8), moves, P);
-					add_move (pos, p | (BISHOP << 8), moves, P);
+				if (Y (p) == 0b000) {
+					add_move (pos, p | PROMOTE (QUEEN), moves, P);
+					add_move (pos, p | PROMOTE (KNIGHT), moves, P);
+					add_move (pos, p | PROMOTE (ROOK), moves, P);
+					add_move (pos, p | PROMOTE (BISHOP), moves, P);
 				} else {
 					add_move (pos, p, moves, P);
 				}
@@ -560,15 +567,15 @@ void Game::get_pawn_moves (int pos, int*& moves) {
 		}
 
 		// en passant
-		if (last_moved == pos + 1) {
-			P = board(last_moved);
-			if (P->get_owner () == WHITE && P->can_be_en_passant ()) {
-				add_move (pos, pos + (-(1 << 4) | 1), moves, P);
+		if (last_moved == pos + RIGHT) {
+			P = board[last_moved];
+			if (P->get_owner () == BLACK && P->can_be_en_passant ()) {
+				add_move (pos, pos + RIGHT_DOWN, moves, P);
 			}
-		} else if (last_moved == pos - 1) {
-			P = board(last_moved);
-			if (P->get_owner () == WHITE && P->can_be_en_passant ()) {
-				add_move (pos, pos + (-(1 << 4) - 1), moves, P);
+		} else if (last_moved == pos + LEFT) {
+			P = board[last_moved];
+			if (P->get_owner () == BLACK && P->can_be_en_passant ()) {
+				add_move (pos, pos + LEFT_DOWN, moves, P);
 			}
 		}
 	}
@@ -582,9 +589,10 @@ void Game::get_rook_moves (int pos, int*& moves) {
 	Piece* P;
 
 	// up
-	p = pos + (1 << 4);
-	while (!(p & 0b10001000)) {
-		P = board(p);
+	p = pos;
+	while (Y (p) != 0b111) {
+		p += UP;
+		P = board[p];
 		if (P) {
 			if (P->get_owner () != turn) {
 				add_move (pos, p, moves, P);
@@ -592,13 +600,13 @@ void Game::get_rook_moves (int pos, int*& moves) {
 			break;
 		}
 		add_move (pos, p, moves);
-		p += (1 << 4);
 	}
 
 	// right
-	p = pos + (1 & 0xf);
-	while (!(p & 0b10001000)) {
-		P = board(p);
+	p = pos;
+	while (X (p) != 0b111) {
+		p += RIGHT;
+		P = board[p];
 		if (P) {
 			if (P->get_owner () != turn) {
 				add_move (pos, p, moves, P);
@@ -606,13 +614,13 @@ void Game::get_rook_moves (int pos, int*& moves) {
 			break;
 		}
 		add_move (pos, p, moves);
-		p += (1 & 0xf);
 	}
 
 	// down
-	p = pos - (1 << 4);
-	while (!(p & 0b10001000)) {
-		P = board(p);
+	p = pos;
+	while (Y (p) != 0b000) {
+		p += DOWN;
+		P = board[p];
 		if (P) {
 			if (P->get_owner () != turn) {
 				add_move (pos, p, moves, P);
@@ -620,13 +628,13 @@ void Game::get_rook_moves (int pos, int*& moves) {
 			break;
 		}
 		add_move (pos, p, moves);
-		p -= (1 << 4);
 	}
 
 	// left
-	p = pos - (1 & 0xf);
-	while (!(p & 0b10001000)) {
-		P = board(p);
+	p = pos;
+	while (X (p) != 0b000) {
+		p += LEFT;
+		P = board[p];
 		if (P) {
 			if (P->get_owner () != turn) {
 				add_move (pos, p, moves, P);
@@ -634,7 +642,6 @@ void Game::get_rook_moves (int pos, int*& moves) {
 			break;
 		}
 		add_move (pos, p, moves);
-		p -= (1 & 0xf);
 	}
 }
 
@@ -643,9 +650,9 @@ bool Game::checked_diagonal (int pos) {
 	Piece* P;
 
 	// rigth-up
-	p = pos + ((1 << 4) | (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) != 0b111 && X (pos) != 0b111) {
+		p = pos + RIGHT_UP;
+		P = board[p];
 		if (P) {
 			if (P->get_owner () != turn) {
 				if (P->get_type () & (BISHOP | QUEEN | KING)) {
@@ -655,24 +662,23 @@ bool Game::checked_diagonal (int pos) {
 				}
 			}
 		} else {
-			p += (1 << 4) | (1 & 0xf);
-			while (!(p & 0b10001000)) {
-				P = board(p);
+			while (Y (p) != 0b111 && X (p) != 0b111) {
+				p += RIGHT_UP;
+				P = board[p];
 				if (P) {
 					if (P->get_owner () != turn && (P->get_type () & (BISHOP | QUEEN))) {
 						return true;
 					}
 					break;
 				}
-				p += (1 << 4) | (1 & 0xf);
 			}
 		}
 	}
 
 	// right-down
-	p = pos + (-(1 << 4) | (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) != 0b000 && X (pos) != 0b111) {
+		p = pos + RIGHT_DOWN;
+		P = board[p];
 		if (P) {
 			if (P->get_owner () != turn) {
 				if (P->get_type () & (BISHOP | QUEEN | KING)) {
@@ -682,24 +688,23 @@ bool Game::checked_diagonal (int pos) {
 				}
 			}
 		} else {
-			p += -(1 << 4) | (1 & 0xf);
-			while (!(p & 0b10001000)) {
-				P = board(p);
+			while (Y (p) != 0b000 && X (p) != 0b111) {
+				p += RIGHT_DOWN;
+				P = board[p];
 				if (P) {
 					if (P->get_owner () != turn && (P->get_type () & (BISHOP | QUEEN))) {
 						return true;
 					}
 					break;
 				}
-				p += -(1 << 4) | (1 & 0xf);
 			}
 		}
 	}
 
 	// left-down
-	p = pos + (-(1 << 4) - (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) != 0b000 && X (pos) != 0b000) {
+		p = pos + LEFT_DOWN;
+		P = board[p];
 		if (P) {
 			if (P->get_owner () != turn) {
 				if (P->get_type () & (BISHOP | QUEEN | KING)) {
@@ -709,24 +714,23 @@ bool Game::checked_diagonal (int pos) {
 				}
 			}
 		} else {
-			p += -(1 << 4) - (1 & 0xf);
-			while (!(p & 0b10001000)) {
-				P = board(p);
+			while (Y (p) != 0b000 && X (p) != 0b000) {
+				p += LEFT_DOWN;
+				P = board[p];
 				if (P) {
 					if (P->get_owner () != turn && (P->get_type () & (BISHOP | QUEEN))) {
 						return true;
 					}
 					break;
 				}
-				p += -(1 << 4) - (1 & 0xf);
 			}
 		}
 	}
 
 	// left-up
-	p = pos + ((1 << 4) - (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) != 0b111 && X (pos) != 0b000) {
+		p = pos + LEFT_UP;
+		P = board[p];
 		if (P) {
 			if (P->get_owner () != turn) {
 				if (P->get_type () & (BISHOP | QUEEN | KING)) {
@@ -736,16 +740,15 @@ bool Game::checked_diagonal (int pos) {
 				}
 			}
 		} else {
-			p += (1 << 4) - (1 & 0xf);
-			while (!(p & 0b10001000)) {
-				P = board(p);
+			while (Y (p) != 0b111 && X (p) != 0b000) {
+				p += LEFT_UP;
+				P = board[p];
 				if (P) {
 					if (P->get_owner () != turn && (P->get_type () & (BISHOP | QUEEN))) {
 						return true;
 					}
 					break;
 				}
-				p += (1 << 4) - (1 & 0xf);
 			}
 		}
 	}
@@ -757,93 +760,89 @@ bool Game::checked_horizontal (int pos) {
 	Piece* P;
 
 	// up
-	p = pos + (1 << 4);
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) != 0b111) {
+		p = pos + UP;
+		P = board[p];
 		if (P) {
 			if (P->get_owner () != turn && P->get_type () & (ROOK | QUEEN | KING)) {
 				return true;
 			}
 		} else {
-			p += (1 << 4);
-			while (!(p & 0b10001000)) {
-				P = board(p);
+			while (Y (p) != 0b111) {
+				p += UP;
+				P = board[p];
 				if (P) {
 					if (P->get_owner () != turn && (P->get_type () & (ROOK | QUEEN))) {
 						return true;
 					}
 					break;
 				}
-				p += (1 << 4);
 			}
 		}
 	}
 
 	// right
-	p = pos + (1 & 0xf);
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (X (pos) != 0b111) {
+		p = pos + RIGHT;
+		P = board[p];
 		if (P) {
 			if (P->get_owner () != turn && P->get_type () & (ROOK | QUEEN | KING)) {
 				return true;
 			}
 		} else {
-			p += (1 & 0xf);
-			while (!(p & 0b10001000)) {
-				P = board(p);
+			while (X (p) != 0b111) {
+				p += RIGHT;
+				P = board[p];
 				if (P) {
 					if (P->get_owner () != turn && (P->get_type () & (ROOK | QUEEN))) {
 						return true;
 					}
 					break;
 				}
-				p += (1 & 0xf);
 			}
 		}
 	}
 
 	// down
-	p = pos - (1 << 4);
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) != 0b000) {
+		p = pos + DOWN;
+		P = board[p];
 		if (P) {
 			if (P->get_owner () != turn && P->get_type () & (ROOK | QUEEN | KING)) {
 				return true;
 			}
 		} else {
-			p -= (1 << 4);
-			while (!(p & 0b10001000)) {
-				P = board(p);
+			while (Y (p) != 0b000) {
+				p += DOWN;
+				P = board[p];
 				if (P) {
 					if (P->get_owner () != turn && (P->get_type () & (ROOK | QUEEN))) {
 						return true;
 					}
 					break;
 				}
-				p -= (1 << 4);
 			}
 		}
 	}
 
 	// left
-	p = pos - (1 & 0xf);
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (X (pos) != 0b000) {
+		p = pos + LEFT;
+		P = board[p];
 		if (P) {
 			if (P->get_owner () != turn && P->get_type () & (ROOK | QUEEN | KING)) {
 				return true;
 			}
 		} else {
-			p -= (1 & 0xf);
-			while (!(p & 0b10001000)) {
-				P = board(p);
+			while (X (p) != 0b000) {
+				p += LEFT;
+				P = board[p];
 				if (P) {
 					if (P->get_owner() != turn && (P->get_type() & (ROOK | QUEEN))) {
 						return true;
 					}
 					break;
 				}
-				p -= (1 & 0xf);
 			}
 		}
 	}
@@ -851,76 +850,67 @@ bool Game::checked_horizontal (int pos) {
 	return false;
 }
 bool Game::checked_by_knight (int pos) {
-	int p;
 	Piece* P;
 
 	// up-right
-	p = pos + ((2 << 4) | (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) < 0b110 && X (pos) != 0b111) {
+		P = board[pos + UP * 2 + RIGHT];
 		if (P && P->get_owner() != turn && P->get_type() == KNIGHT) {
 			return true;
 		}
 	}
 
 	// right-up
-	p = pos + ((1 << 4) | (2 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) != 0b111 && X (pos) < 0b110) {
+		P = board[pos + RIGHT * 2 + UP];
 		if (P && P->get_owner() != turn && P->get_type() == KNIGHT) {
 			return true;
 		}
 	}
 
 	// right-down
-	p = pos + (-(1 << 4) | (2 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) != 0b000 && X (pos) < 0b110) {
+		P = board[pos + RIGHT * 2 + DOWN];
 		if (P && P->get_owner() != turn && P->get_type() == KNIGHT) {
 			return true;
 		}
 	}
 
 	// down-right
-	p = pos + (-(2 << 4) | (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) < 0b001 && X (pos) != 0b111) {
+		P = board[pos * DOWN * 2 + RIGHT];
 		if (P && P->get_owner() != turn && P->get_type() == KNIGHT) {
 			return true;
 		}
 	}
 
 	// down-left
-	p = pos + (-(2 << 4) - (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) > 0b001 && X (pos) != 0b000) {
+		P = board[pos + DOWN * 2 + LEFT];
 		if (P && P->get_owner() != turn && P->get_type() == KNIGHT) {
 			return true;
 		}
 	}
 
 	// left-down
-	p = pos + (-(1 << 4) - (2 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) != 0b000 && X (pos) > 0b001) {
+		P = board[pos + LEFT * 2 + DOWN];
 		if (P && P->get_owner() != turn && P->get_type() == KNIGHT) {
 			return true;
 		}
 	}
 
 	// left-up
-	p = pos + ((1 << 4) - (2 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) != 0b111 && X (pos) > 0b001) {
+		P = board[pos + LEFT * 2 + UP];
 		if (P && P->get_owner() != turn && P->get_type() == KNIGHT) {
 			return true;
 		}
 	}
 
 	// up-left
-	p = pos + ((2 << 4) - (1 & 0xf));
-	if (!(p & 0b10001000)) {
-		P = board(p);
+	if (Y (pos) < 0b110 && X (pos) != 0b000) {
+		P = board[pos + UP * 2 + LEFT];
 		if (P && P->get_owner() != turn && P->get_type() == KNIGHT) {
 			return true;
 		}
@@ -929,22 +919,14 @@ bool Game::checked_by_knight (int pos) {
 	return false;
 }
 
-const char pieces_repr[33] = {'.', 
-	'B', 
-	'K', '.', 
-	'k', '.', '.', '.', 
-	'P', '.', '.', '.', '.', '.', '.', '.', 
-	'Q', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 
-	'R'
-};
 void Game::print_board () {
 	for (int i = 7; i >= 0; i--) {
 		cout << "\t" << (i + 1) << "  |";
 		for (int j = 0; j < 8; j++) {
 			cout << "\t";
-			if (board[(i << 3) | (j & 0x7)]) {
-				cout << pieces_repr[board[(i << 3) | (j & 0x7)]->get_type ()];
-				cout << (board[(i << 3) | (j & 0x7)]->get_owner () == WHITE ? 'W' : 'B');
+			if (board[COORD (i, j)]) {
+				cout << pieces_repr[board[COORD (i, j)]->get_type ()];
+				cout << (board[COORD (i, j)]->get_owner () == WHITE ? 'W' : 'B');
 			}
 		}
 		if (i != 0) {
@@ -975,13 +957,12 @@ void Game::print_possible_moves (int* moves, int n_moves) {
 	} else {
 		for (int i = 0; i < n_moves; i++) {
 			int move = moves[i];
-			int from = move & 0xff;
-			int to = move >> 8;
-			cout << pieces_repr[board(from)->get_type ()] << "\t";
-			cout << (char)((from & 0xf) + 'a') << ((from >> 4) + 1) << "\t->\t";
-			cout << (char)((to & 0xf) + 'a') << (((to >> 4) & 0xf) + 1);
-			if (to >> 8) {
-				cout << pieces_repr[to >> 8];
+			int DECOMPRESS_MOVE (move, from, to);
+			cout << pieces_repr[board[from]->get_type ()] << "\t";
+			cout << (char)(X (from)	+ 'a') << (Y (from)					+ 1) << "\t->\t";
+			cout << (char)(X (to)	+ 'a') << (Y (CUT_PROMOTION (to))	+ 1);
+			if (GET_PROMOTION (to)) {
+				cout << pieces_repr[GET_PROMOTION (to)];
 			}
 			cout << endl;
 		}
@@ -991,24 +972,23 @@ void Game::human_move (string move) {	// "a1 h8x" or "A"
 	if (move[0] == 'A') {
 		int best_move;
 		int score = get_best_move (&best_move);
-		int from = best_move & 0xff;
-		int to = best_move >> 8;
+		int DECOMPRESS_MOVE (best_move, from, to);
 
 		cout << "Predicted score: " << score << endl;
-		cout << pieces_repr[board(from)->get_type ()] << "\t";
-		cout << (char)((from & 0xf) + 'a') << ((from >> 4) + 1) << "\t->\t";
-		cout << (char)((to & 0xf) + 'a') << (((to >> 4) & 0xf) + 1);
-		if (to >> 8) {
-			cout << pieces_repr[to >> 8];
+		cout << pieces_repr[board[from]->get_type ()] << "\t";
+		cout << (char)(X (from)	+ 'a') << (Y (from)					+ 1) << "\t->\t";
+		cout << (char)(X (to)	+ 'a') << (Y (CUT_PROMOTION (to))	+ 1);
+		if (GET_PROMOTION (to)) {
+			cout << pieces_repr[GET_PROMOTION (to)];
 		}
 		cout << endl << endl;
 
 		return;
 	}
-	int from_col = move[0] - 'a';
-	int from_row = move[1] - '1';
-	int to_col = move[3] - 'a';
-	int to_row = move[4] - '1';
+	int from_col =	move[0] - 'a';
+	int from_row =	move[1] - '1';
+	int to_col =	move[3] - 'a';
+	int to_row =	move[4] - '1';
 	int new_type = 0;
 	if (move[5]) {
 		for (new_type = 1; new_type < 34; new_type++) {
@@ -1018,7 +998,7 @@ void Game::human_move (string move) {	// "a1 h8x" or "A"
 		}
 	}
 
-	move_piece ((from_row << 4) | (from_col & 0xf), (to_row << 4) | (to_col & 0xf) | (new_type << 8));
+	move_piece (COORD (from_row, from_col), COORD (to_row, to_col) | PROMOTE (new_type));
 }
 
 int Game::test () {
