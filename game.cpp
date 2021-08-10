@@ -60,23 +60,23 @@ void Game::move_piece (int from, int to) {
 
 	if (board[from]->get_type () == KING) {
 		// short-castle
-		if (to == from + 2) {
+		if (to == from + 2 * RIGHT) {
 			board[from]->move (to);
 			board[to] = board[from];
 			board[from] = nullptr;
-			board[from + 3]->move (from + 1);
-			board[from + 1] = board[from + 3];
-			board[from + 3] = nullptr;
+			board[from + 3 * RIGHT]->move (from + 1 * RIGHT);
+			board[from + 1 * RIGHT] = board[from + 3];
+			board[from + 3 * RIGHT] = nullptr;
 			return;
 		} else 
 		// long castle
-		if (to == from - 2) {
+		if (to == from + 2 * LEFT) {
 			board[from]->move (to);
 			board[to] = board[from];
 			board[from] = nullptr;
-			board[from - 4]->move (from - 1);
-			board[from - 1] = board[from - 4];
-			board[from - 4] = nullptr;
+			board[from + 4 * LEFT]->move (from + 1 * LEFT);
+			board[from + 1 * LEFT] = board[from + 4 * LEFT];
+			board[from + 4 * LEFT] = nullptr;
 			return;
 		}
 	}
@@ -1069,13 +1069,13 @@ int Game::mini (int depth, int alpha, int beta, int* best_move) {
 
 	for (int i = 0; i < n_moves; i++) {
 		// simulate move
-		moved = board(moves[i] & 0xff);
+		moved = board[CUT_PROMOTION (moves[i])];
 		was_first_double_move = moved->can_be_en_passant ();
 		had_moved = moved->is_first_move ();
 		previous_type = moved->get_type ();
 		eaten = simulate_move (moves[i]);
 		if (eaten) {
-			actual_score = -values[eaten->get_type ()];
+			actual_score = values[eaten->get_type ()];
 		} else {
 			actual_score = 0;
 		}
@@ -1151,7 +1151,7 @@ int Game::maxi (int depth, int alpha, int beta, int* best_move) {
 
 	for (int i = 0; i < n_moves; i++) {
 		// simulate move
-		moved = board(moves[i] & 0xff);
+		moved = board[CUT_PROMOTION (moves[i])];
 		was_first_double_move = moved->can_be_en_passant ();
 		had_moved = moved->is_first_move ();
 		previous_type = moved->get_type ();
@@ -1200,67 +1200,66 @@ int Game::maxi (int depth, int alpha, int beta, int* best_move) {
 	}
 
 	if (best_move) {
-		*best_move = my_best_move;
+		*best_move = my_best_move;	// my_best_move cannot be uninitialized because it would be checkmate or draw
 	}
 	return best_score;
 }
 Piece* Game::simulate_move (int move) {
-	int from = move & 0xff;
-	int to = move >> 8;
+	int DECOMPRESS_MOVE (move, from, to);
 	moves_without_take_or_pawn_move++;
 	turn = !turn;
 	Piece* eaten = nullptr;
 
-	if (board(from)->get_type () == KING) {
+	if (board[from]->get_type () == KING) {
 		// short-castle
-		if (to == from + 2) {
-			board(from)->move (to);
-			board(to) = board(from);
-			board(from) = nullptr;
-			board(from + 3)->move (from + 1);
-			board(from + 1) = board(from + 3);
-			board(from + 3) = nullptr;
+		if (to == from + 2 * RIGHT) {
+			board[from]->move (to);
+			board[to] = board[from];
+			board[from] = nullptr;
+			board[from + 3 * RIGHT]->move (from + 1 * RIGHT);
+			board[from + 1 * RIGHT] = board[from + 3 * RIGHT];
+			board[from + 3 * RIGHT] = nullptr;
 			return nullptr;
 		} else 
 		// long castle
-		if (to == from - 2) {
-			board(from)->move (to);
-			board(to) = board(from);
-			board(from) = nullptr;
-			board(from - 4)->move (from - 1);
-			board(from - 1) = board(from - 4);
-			board(from - 4) = nullptr;
+		if (to == from + 2 * LEFT) {
+			board[from]->move (to);
+			board[to] = board[from];
+			board[from] = nullptr;
+			board[from + 4 * LEFT]->move (from + 1 * LEFT);
+			board[from + 1 * LEFT] = board[from + 4 * LEFT];
+			board[from + 4 * LEFT] = nullptr;
 			return nullptr;
 		}
 	}
 
 	// en passant
-	if (board(from)->get_type () == PAWN && (from & 0x7) != (to & 0x7) && !board(to & 0xff)) {
-		eaten = board[((from >> 1) & 0b111000) | (to & 0b000111)];
-		board[((from >> 1) & 0b111000) | (to & 0b000111)] = nullptr;
+	if (board[from]->get_type () == PAWN && X (from) != X (to) && !board[CUT_PROMOTION (to)]) {
+		eaten = board[(from & 0b111000) | X (to)];
+		board[(from & 0b111000) | X (to)] = nullptr;
 		remaining_pieces[turn]--;
 	} else 
 	// promotion
-	if (to >> 8) {
-		board(from)->promote (to >> 8);
+	if (GET_PROMOTION (to)) {
+		board[from]->promote (GET_PROMOTION (to));
 	}
 
-	to &= 0xff;
+	to = CUT_PROMOTION (to);
 	last_moved = to;
 
-	if (board(from)->get_type () == PAWN) {
+	if (board[from]->get_type () == PAWN) {
 		moves_without_take_or_pawn_move = 0;
 	}
 
-	if (board(to)) {
-		eaten = board(to);
+	if (board[to]) {
+		eaten = board[to];
 		moves_without_take_or_pawn_move = 0;
 		remaining_pieces[turn]--;
 		check_draw ();
 	}
-	board(from)->move (to);
-	board(to) = board(from);
-	board(from) = nullptr;
+	board[from]->move (to);
+	board[to] = board[from];
+	board[from] = nullptr;
 
 	if (moves_without_take_or_pawn_move == 100) {
 		is_draw = true;
@@ -1269,33 +1268,32 @@ Piece* Game::simulate_move (int move) {
 	return eaten;
 }
 void Game::undo_simulated_move (int move, Piece* eaten) {
-	int from = move & 0xff;
-	int to = move >> 8;
+	int DECOMPRESS_MOVE (move, from, to);
 
-	if (board(to & 0xff)->get_type () == KING) {
+	if (board[CUT_PROMOTION (to)]->get_type () == KING) {
 		// short-castle
-		if (to == from + 2) {
-			board(to)->move (from);
-			board(from) = board(to);
-			board(to) = nullptr;
-			board(from + 1)->move (from + 3);
-			board(from + 3) = board(from + 1);
-			board(from + 1) = nullptr;
-			board(from + 3)->undo_first_move ();
+		if (to == from + 2 * RIGHT) {
+			board[to]->move (from);
+			board[from] = board[to];
+			board[to] = nullptr;
+			board[from + 1 * RIGHT]->move (from + 3 * RIGHT);
+			board[from + 3 * RIGHT] = board[from + 1 * RIGHT];
+			board[from + 1 * RIGHT] = nullptr;
+			board[from + 3 * RIGHT]->undo_first_move ();
 			is_checkmate = false;
 			is_draw = false;
 			turn = !turn;
 			return;
 		} else 
 		// long castle
-		if (to == from - 2) {
-			board(to)->move (from);
-			board(from) = board(to);
-			board(to) = nullptr;
-			board(from - 1)->move (from - 4);
-			board(from - 4) = board(from - 1);
-			board(from - 1) = nullptr;
-			board(from - 4)->undo_first_move ();
+		if (to == from + 2 * LEFT) {
+			board[to]->move (from);
+			board[from] = board[to];
+			board[to] = nullptr;
+			board[from + 1 * LEFT]->move (from + 4 * LEFT);
+			board[from + 4 * LEFT] = board[from + 1 * LEFT];
+			board[from + 1 * LEFT] = nullptr;
+			board[from + 4 * LEFT]->undo_first_move ();
 			is_checkmate = false;
 			is_draw = false;
 			turn = !turn;
@@ -1304,19 +1302,19 @@ void Game::undo_simulated_move (int move, Piece* eaten) {
 	}
 
 	// promotion
-	if (to >> 8) {
-		board(to & 0xff)->undo_promote ();
+	if (GET_PROMOTION (to)) {
+		board[CUT_PROMOTION (to)]->undo_promote ();
 	}
 
-	to &= 0xff;
+	to = CUT_PROMOTION (to);
 
-	board(to)->move (from);
-	board(from) = board(to);
-	board(to) = nullptr;
+	board[to]->move (from);
+	board[from] = board[to];
+	board[to] = nullptr;
 
 	if (eaten) {
 		remaining_pieces[turn]++;
-		board(eaten->get_pos ()) = eaten;
+		board[eaten->get_pos ()] = eaten;
 	}
 
 	turn = !turn;

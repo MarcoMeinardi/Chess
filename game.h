@@ -5,7 +5,7 @@
 #include <algorithm>
 using namespace std;
 
-#include "./board.h"
+#include "./piece.h"
 
 #define WHITE 0
 #define BLACK 1
@@ -49,7 +49,7 @@ const char pieces_repr[33] = {'.',
 
 class Game {
 private:
-	Board board;
+	Piece* board[64];
 	int turn;
 	int last_moved;	// for en passant
 
