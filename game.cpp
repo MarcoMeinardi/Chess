@@ -83,7 +83,7 @@ void Game::move_piece (int from, int to) {
 
 	// en passant
 	if (board[from]->get_type () == PAWN && X (from) != X (to) && !board[CUT_PROMOTION (to)]) {
-		free (board[(from & 0b111000) | X (to)]);	// (Y (from) << 3) | X (to)
+		free (board[(from & 0b111000) | X (to)]);	// COORD (Y(from), X (to))
 		board[(from & 0b111000) | X (to)] = nullptr;
 		remaining_pieces[turn]--;
 	} else 
@@ -413,7 +413,7 @@ void Game::get_knight_moves (int pos, int*& moves) {
 
 	// down-left
 	if (Y (pos) > 0b001 && X (pos) != 0b000) {
-		p = pos + DOWN * 2 + RIGHT;
+		p = pos + DOWN * 2 + LEFT;
 		P = board[p];
 		if (!P || P->get_owner () != turn) {
 			add_move (pos, p, moves, P);
@@ -504,12 +504,12 @@ void Game::get_pawn_moves (int pos, int*& moves) {
 		}
 
 		// en passant
-		if (last_moved == pos + RIGHT) {
+		if (X (pos) != 0b111 && last_moved == pos + RIGHT) {
 			P = board[last_moved];
 			if (P->get_owner () == BLACK && P->can_be_en_passant ()) {
 				add_move (pos, pos + RIGHT_UP, moves, P);
 			}
-		} else if (last_moved == pos + LEFT) {
+		} else if (X (pos) != 0b000 && last_moved == pos + LEFT) {
 			P = board[last_moved];
 			if (P->get_owner () == BLACK && P->can_be_en_passant ()) {
 				add_move (pos, pos + LEFT_UP, moves, P);
@@ -567,14 +567,14 @@ void Game::get_pawn_moves (int pos, int*& moves) {
 		}
 
 		// en passant
-		if (last_moved == pos + RIGHT) {
+		if (X (pos) != 0b111 && last_moved == pos + RIGHT) {
 			P = board[last_moved];
-			if (P->get_owner () == BLACK && P->can_be_en_passant ()) {
+			if (P->get_owner () == WHITE && P->can_be_en_passant ()) {
 				add_move (pos, pos + RIGHT_DOWN, moves, P);
 			}
-		} else if (last_moved == pos + LEFT) {
+		} else if (X (pos) != 0b000 && last_moved == pos + LEFT) {
 			P = board[last_moved];
-			if (P->get_owner () == BLACK && P->can_be_en_passant ()) {
+			if (P->get_owner () == WHITE && P->can_be_en_passant ()) {
 				add_move (pos, pos + LEFT_DOWN, moves, P);
 			}
 		}
@@ -877,8 +877,8 @@ bool Game::checked_by_knight (int pos) {
 	}
 
 	// down-right
-	if (Y (pos) < 0b001 && X (pos) != 0b111) {
-		P = board[pos * DOWN * 2 + RIGHT];
+	if (Y (pos) > 0b001 && X (pos) != 0b111) {
+		P = board[pos + DOWN * 2 + RIGHT];
 		if (P && P->get_owner() != turn && P->get_type() == KNIGHT) {
 			return true;
 		}
@@ -1013,6 +1013,16 @@ int Game::test () {
 			break;
 		}
 		move = moves[rand () % n_moves];
+		// print_board ();
+		// int DECOMPRESS_MOVE (move, from, to);
+		// cout << pieces_repr[board[from]->get_type ()] << "\t";
+		// cout << (char)(X (from)	+ 'a') << (Y (from)					+ 1) << "\t->\t";
+		// cout << (char)(X (to)	+ 'a') << (Y (CUT_PROMOTION (to))	+ 1);
+		// if (GET_PROMOTION (to)) {
+		// 	cout << pieces_repr[GET_PROMOTION (to)];
+		// }
+		// cout << endl;
+
 		move_piece (move & 0xff, move >> 8);
 		cnt++;
 		if (is_draw) {

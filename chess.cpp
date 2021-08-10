@@ -27,6 +27,22 @@ int main () {
     // free (game);
 
     // test
+
+    /*
+    Final stats
+
+    Games played:	10000
+    Total moves:	3165841
+    Checkmates:	1396 / 10000
+    Draws:		8604 / 10000
+    White wins:	699 / 1396
+    Black wins:	697 / 1396
+
+    real	0m4,782s
+    user	0m4,780s
+    sys	    0m0,000s
+    */
+
     srand (0);
     int total_games = 10'000;
     int total_moves = 0;

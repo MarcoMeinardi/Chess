@@ -26,50 +26,51 @@ public:
 		type = type_;
 		first_double_move = false;
 	}
-	inline int get_pos () {
+
+	int get_pos () {
 		return pos;
 	}
 
-	inline void set_pos (int pos_) {
+	void set_pos (int pos_) {
 		pos = pos_;
 	}
 
-	inline int get_type () {
+	int get_type () {
 		return type;
 	}
 
-	inline int get_owner () {
+	int get_owner () {
 		return owner;
 	}
 
-	inline bool is_first_move () {
+	bool is_first_move () {
 		return !has_moved;
 	}
 
-	inline bool can_be_en_passant () {
+	bool can_be_en_passant () {
 		return first_double_move;
 	}
 
-	inline void promote (int type_) {
+	void promote (int type_) {
 		type = type_;
 	}
 
-	inline void undo_promote () {
+	void undo_promote () {
 		type = PAWN;
 	}
 
-	inline void undo_first_move () {
+	void undo_first_move () {
 		has_moved = false;
 	}
 
-	inline void set_prev_first_double_move (bool first_double_move_) {
+	void set_prev_first_double_move (bool first_double_move_) {
 		first_double_move = first_double_move_;
 	}
 
 	void move (int to) {
 		has_moved = true;
 		first_double_move = false;
-		if (type == PAWN && Y (to) != Y (to) + 1 && Y (to) !=  Y (to) - 1) {
+		if (type == PAWN && Y (to) != Y (pos) + 1 && Y (to) != Y (pos) - 1) {
 			first_double_move = true;
 		}
 		pos = to;
