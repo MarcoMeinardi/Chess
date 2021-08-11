@@ -1,3 +1,5 @@
+#!/bin/python3
+
 import pygame
 from subprocess import Popen, PIPE
 
@@ -5,9 +7,14 @@ black			= (0x7c, 0x55, 0x36)
 white			= (0xe0, 0xc0, 0x91)
 background		= (0x42, 0x29, 0x1a)
 
-selected_surface = pygame.Surface ((100, 100))
+selected_surface = pygame.Surface ((100, 100), pygame.SRCALPHA)
 selected_surface.set_alpha (0x80)
 selected_surface.fill ((0xff, 0xff, 0x00))
+
+edge_surface = pygame.Surface ((100, 100), pygame.SRCALPHA)
+edge_surface.set_alpha (0xa0)
+edge_surface.fill ((0xff, 0xff, 0xff))
+pygame.draw.rect (edge_surface, (255, 255, 255, 0), (5, 5, 90, 90))
 
 pygame.init ()
 pygame.font.init ()
@@ -55,7 +62,9 @@ r = Popen (["../chess"], stdin = PIPE, stdout = PIPE, encoding = "utf-8", bufsiz
 stdin  = r.stdin
 stdout = r.stdout
 
-selected = [-1, -1]
+selected = None
+prev_pos = None
+act_pos  = None
 mouse_is_down = False
 
 def draw_board (board, selected):
@@ -70,7 +79,7 @@ def draw_board (board, selected):
 			else:
 				pygame.draw.rect (screen, black, rect)
 
-			if selected == [i, j]:
+			if selected == [i, j] or prev_pos == [i, j] or act_pos == [i, j]:
 				# selected tile
 				screen.blit (selected_surface, rect[:2])
 			if (selected != [i, j] or not mouse_is_down) and board[i][j]:
@@ -90,9 +99,20 @@ def draw_board (board, selected):
 			screen.blit (font.render (chr (ord ('a') + i), False, white), (100 * (i + 1) + 85, 875))
 
 	# selected piece
-	if selected[0] != -1 and mouse_is_down and board[selected[0]][selected[1]]:
+	if selected is not None and mouse_is_down and board[selected[0]][selected[1]]:
 		x, y = pygame.mouse.get_pos ()
+		grid_y = y // 100
+		grid_x = x // 100
+		if 0 < grid_y <= 8 and 0 < grid_x <= 8:
+			screen.blit (edge_surface, (grid_x * 100, grid_y * 100, 100, 100))
 		screen.blit (pieces[board[selected[0]][selected[1]]], (x - 50, y - 50, 100, 100))
+
+def move_piece (fr, to):
+	global board, prev_pos, act_pos
+	board[to[0]][to[1]] = board[fr[0]][fr[1]]
+	board[fr[0]][fr[1]] = 0
+	prev_pos = fr
+	act_pos = to
 
 def handle_mouse_down ():
 	global selected, mouse_is_down
@@ -100,19 +120,26 @@ def handle_mouse_down ():
 	x = (x // 100) - 1
 	y = 8 - (y // 100)
 	if 0 <= x < 8 and 0 <= y < 8:
-		selected = [ y, x]
+		if selected is not None:
+			if selected != [y, x]:
+				move_piece (selected, [y, x])
+				selected = None
+		elif board[y][x]:
+			selected = [y, x]
+	else:
+		selected = None
 	mouse_is_down = True
+
 def handle_mouse_up ():
 	global selected, mouse_is_down
 	x, y = pygame.mouse.get_pos ()
 	x = (x // 100) - 1
 	y = 8 - (y // 100)
-	if selected[0] != -1 and board[selected[0]][selected[1]]:
+	if selected is not None and board[selected[0]][selected[1]]:
 		if 0 <= x < 8 and 0 <= y < 8 and selected != [y, x]:
-			board[y][x] = board[selected[0]][selected[1]]
-			board[selected[0]][selected[1]] = 0
-	if 0 <= x < 8 and 0 <= y < 8 and selected != [y, x]:
-		selected = [-1, -1]
+			move_piece (selected, [y, x])
+	if selected != [y, x]:
+		selected = None
 	mouse_is_down = False
 
 running = True
