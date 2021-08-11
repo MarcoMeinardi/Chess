@@ -919,6 +919,53 @@ bool Game::checked_by_knight (int pos) {
 	return false;
 }
 
+int Game::get_piece_moves_GUI (int pos, int* moves) {
+	int* original_moves = moves;
+	if (!board[pos] || board[pos]->get_owner () != turn || is_checkmate || is_draw) {
+		return 0;
+	}
+
+	switch (board[pos]->get_type ()) {
+	case BISHOP:
+		get_bishop_moves	(pos, moves);
+		break;
+	case KING:
+		get_king_moves		(pos, moves);
+		break;
+	case KNIGHT:
+		get_knight_moves	(pos, moves);
+		break;
+	case PAWN:
+		get_pawn_moves		(pos, moves);
+		break;
+	case QUEEN:
+		get_queen_moves		(pos, moves);
+		break;
+	case ROOK:
+		get_rook_moves		(pos, moves);
+		break;
+	}
+
+	return moves - original_moves;
+}
+string Game::move_piece_GUI (int from, int to) {
+	// castle
+	if (board[from]->get_type () == KING && (X (to) == X (from) + 2 || X (to) == X (from) - 2)) {
+		move_piece (from, to);
+		return "O";
+	}
+	// en passant
+	int eaten = -1;
+	if (board[from]->get_type () == PAWN && X (from) != X (to) && !board[to]) {
+		eaten = COORD (Y (from), X (to));
+	}
+	if (board[to]) {
+		eaten = to;
+	}
+	move_piece (from, to);
+	return to_string (eaten);
+}
+
 void Game::print_board () {
 	for (int i = 7; i >= 0; i--) {
 		cout << "\t" << (i + 1) << "  |";

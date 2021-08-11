@@ -1,103 +1,30 @@
 #include "./game.h"
-#include <ctime>
 
 int main () {
-	Game* game;
+    Game* game = new Game ();
+    char command;
+    int pos, from, to;
+    int moves[128];
+    int n_moves;
 
-	// standard game (good luck)
-	int moves[128];
-	int n_moves;
-	srand (time (NULL));
-	game = new Game ();
-	while (true) {
-	game->print_board ();
-		n_moves = game->load_moves (moves);
-		game->print_possible_moves (moves, n_moves);
+    while (true) {
+        cin >> command;
 
-		cout << "> ";
-		string from, to;
-		cin >> from;
-		if (from[0] == 'A') {
-			game->human_move (from);
-		} else {
-			cin >> to;
-			game->human_move (from + " " + to);
-		}
-	}
-	free (game);
+        switch (command) {
+        case 'S':   // select piece
+            cin >> pos;
+            n_moves = game->get_piece_moves_GUI (pos, moves);
+            cout << n_moves << endl;
+            for (int i = 0; i < n_moves; i++) {
+                cout << (moves[i] >> 8) << endl; // don't need "from"
+            }
+            break;
+        case 'M':   // move piece
+            cin >> from >> to;
+            cout << game->move_piece_GUI (from, to) << endl;
+            break;
+        }
+    }
 
-
-	// test
-
-	/*
-	Final stats
-
-	Games played:	10000
-	Total moves:	3165841
-	Checkmates:	1396 / 10000
-	Draws:		8604 / 10000
-	White wins:	699 / 1396
-	Black wins:	697 / 1396
-
-	real	0m4,782s
-	user	0m4,780s
-	sys	    0m0,000s
-	*/
-
-	// srand (0);
-	// int total_games = 10'000;
-	// int total_moves = 0;
-	// int black_win = 0, white_win = 0;
-	// int checkmates = 0, draws = 0;
-
-	// for (int i = 0; i < total_games; i++) {
-	// 	if (i % 1'000 == 0) {
-	// 		cout << "Games played:\t" << i << endl;
-	// 		cout << "Total moves:\t" << total_moves << endl;
-	// 		cout << "Checkmates:\t" << checkmates << " / " << i << endl;
-	// 		cout << "Draws:\t\t" << draws << " / " << i << endl;
-	// 		cout << "White wins:\t" << white_win << " / " << checkmates << endl;
-	// 		cout << "Black wins:\t" << black_win << " / " << checkmates << endl;
-	// 		cout << endl;
-	// 	}
-
-
-	// 	game = new Game ();
-	// 	int res = game->test ();
-	// 	free (game);
-	// 	int cnt = res & ~(7 << 29);
-	// 	bool last_turn = res & (1 << 29);
-	// 	bool is_checkmate = res & (1 << 30);
-	// 	bool is_draw = res & (1 << 31);
-
-	// 	if (cnt >= 9999) {
-	// 		cout << "stopped" << endl;
-	// 		cout << cnt << endl;
-	// 		return 0;
-	// 	}
-
-	// 	if (is_checkmate) {
-	// 		checkmates++;
-	// 		if (last_turn == WHITE) {
-	// 			white_win++;
-	// 		} else {
-	// 			black_win++;
-	// 		}
-	// 	} else if (is_draw) {
-	// 		draws++;
-	// 	} else {
-	// 		cout << "Somthing strange has happened (maybe stopped?)" << endl;
-	// 	}
-	// 	total_moves += cnt;
-	// }
-
-	// cout << endl << "-------------------" << endl;
-	// cout << "Final stats" << endl << endl;
-	// cout << "Games played:\t" << total_games << endl;
-	// cout << "Total moves:\t" << total_moves << endl;
-	// cout << "Checkmates:\t" << checkmates << " / " << total_games << endl;
-	// cout << "Draws:\t\t" << draws << " / " << total_games << endl;
-	// cout << "White wins:\t" << white_win << " / " << checkmates << endl;
-	// cout << "Black wins:\t" << black_win << " / " << checkmates << endl;
-	return 0;
+    return 0;
 }

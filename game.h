@@ -82,6 +82,8 @@ public:
 	bool checked_horizontal (int pos);
 	bool checked_by_knight (int pos);
 
+	int get_piece_moves_GUI (int pos, int* moves);
+	string move_piece_GUI (int from, int to);
 
 	void print_board ();
 	void print_possible_moves(int* moves, int n_moves);
