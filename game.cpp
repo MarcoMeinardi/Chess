@@ -956,11 +956,11 @@ string Game::move_piece_GUI (int from, int to) {
 	}
 	// en passant
 	int eaten = -1;
-	if (board[from]->get_type () == PAWN && X (from) != X (to) && !board[to]) {
+	if (board[from]->get_type () == PAWN && X (from) != X (to) && !board[CUT_PROMOTION (to)]) {
 		eaten = COORD (Y (from), X (to));
 	}
-	if (board[to]) {
-		eaten = to;
+	if (board[CUT_PROMOTION (to)]) {
+		eaten = CUT_PROMOTION (to);
 	}
 	move_piece (from, to);
 	return to_string (eaten);

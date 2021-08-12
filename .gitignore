@@ -1,2 +1,4 @@
 .vscode
 chess
+test/test
+GUI/__pycache__/
