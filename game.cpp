@@ -949,6 +949,8 @@ int Game::get_piece_moves_GUI (int pos, int* moves) {
 	return moves - original_moves;
 }
 string Game::move_piece_GUI (int from, int to) {
+	int moves[128];	// to check checkmate and draw
+
 	// castle
 	if (board[from]->get_type () == KING && (X (to) == X (from) + 2 || X (to) == X (from) - 2)) {
 		move_piece (from, to);
@@ -963,6 +965,14 @@ string Game::move_piece_GUI (int from, int to) {
 		eaten = CUT_PROMOTION (to);
 	}
 	move_piece (from, to);
+	if (!is_draw && !is_checkmate) {
+		load_moves (moves);
+	}
+	if (is_draw) {
+		return to_string (eaten) + " D";
+	} else if (is_checkmate) {
+		return to_string (eaten) + " C" + (turn == WHITE ? "B" : "W");
+	}
 	return to_string (eaten);
 }
 
@@ -1018,7 +1028,7 @@ void Game::print_possible_moves (int* moves, int n_moves) {
 void Game::human_move (string move) {	// "a1 h8x" or "A"
 	if (move[0] == 'A') {
 		int best_move;
-		int score = get_best_move (&best_move);
+		int score = get_best_move (&best_move, 5);
 		int DECOMPRESS_MOVE (best_move, from, to);
 
 		cout << "Predicted score: " << score << endl;
@@ -1060,15 +1070,6 @@ int Game::test () {
 			break;
 		}
 		move = moves[rand () % n_moves];
-		// print_board ();
-		// int DECOMPRESS_MOVE (move, from, to);
-		// cout << pieces_repr[board[from]->get_type ()] << "\t";
-		// cout << (char)(X (from)	+ 'a') << (Y (from)					+ 1) << "\t->\t";
-		// cout << (char)(X (to)	+ 'a') << (Y (CUT_PROMOTION (to))	+ 1);
-		// if (GET_PROMOTION (to)) {
-		// 	cout << pieces_repr[GET_PROMOTION (to)];
-		// }
-		// cout << endl;
 
 		move_piece (move & 0xff, move >> 8);
 		cnt++;
@@ -1079,12 +1080,31 @@ int Game::test () {
 
 	return cnt | (turn << 29) | (is_checkmate << 30) | (is_draw << 31);
 }
+int Game::test_auto () {
+	int cnt = 0;
+	int best_move;
 
-int Game::get_best_move (int* best_move) {
+	while (cnt < 10'000) {
+		get_best_move (&best_move, 4);
+		if (is_checkmate || is_draw) {
+			break;
+		}
+
+		move_piece (best_move & 0xff, best_move >> 8);
+		cnt++;
+		if (is_draw) {
+			break;
+		}
+	}
+
+	return cnt | (turn << 29) | (is_checkmate << 30) | (is_draw << 31);
+}
+
+int Game::get_best_move (int* best_move, int max_depth) {
 	if (turn == WHITE) {
-		return maxi (MAX_DEPTH, -INF, INF, best_move);
+		return maxi (max_depth, -INF, INF, best_move);
 	} else {
-		return mini (MAX_DEPTH, -INF, INF, best_move);
+		return mini (max_depth, -INF, INF, best_move);
 	}
 }
 int Game::mini (int depth, int alpha, int beta, int* best_move) {
@@ -1103,7 +1123,7 @@ int Game::mini (int depth, int alpha, int beta, int* best_move) {
 	}
 	random_shuffle (moves, moves + n_moves);	// in the beginning the predicted score is zero so he just make the first available move
 
-	int best_score = INF;
+	int best_score = INF * 2;
 	int actual_score;
 	int my_best_move;
 	Piece* eaten;
@@ -1116,13 +1136,13 @@ int Game::mini (int depth, int alpha, int beta, int* best_move) {
 
 	for (int i = 0; i < n_moves; i++) {
 		// simulate move
-		moved = board[CUT_PROMOTION (moves[i])];
+		moved = board[moves[i] & 0xff];	// from
 		was_first_double_move = moved->can_be_en_passant ();
-		had_moved = moved->is_first_move ();
+		had_moved = !moved->is_first_move ();
 		previous_type = moved->get_type ();
 		eaten = simulate_move (moves[i]);
 		if (eaten) {
-			actual_score = values[eaten->get_type ()];
+			actual_score = -values[eaten->get_type ()];
 		} else {
 			actual_score = 0;
 		}
@@ -1185,7 +1205,7 @@ int Game::maxi (int depth, int alpha, int beta, int* best_move) {
 	}
 	random_shuffle (moves, moves + n_moves);	// in the beginning the predicted score is zero so he just make the first available move
 
-	int best_score = -INF;
+	int best_score = -INF * 2;
 	int actual_score;
 	int my_best_move;
 	Piece* eaten;
@@ -1198,9 +1218,9 @@ int Game::maxi (int depth, int alpha, int beta, int* best_move) {
 
 	for (int i = 0; i < n_moves; i++) {
 		// simulate move
-		moved = board[CUT_PROMOTION (moves[i])];
+		moved = board[moves[i] & 0xff];	// from
 		was_first_double_move = moved->can_be_en_passant ();
-		had_moved = moved->is_first_move ();
+		had_moved = !moved->is_first_move ();
 		previous_type = moved->get_type ();
 		eaten = simulate_move (moves[i]);
 		if (eaten) {

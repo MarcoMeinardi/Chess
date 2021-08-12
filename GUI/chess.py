@@ -96,6 +96,8 @@ mouse_is_down = False
 possible_moves = set ()
 
 def draw_board ():
+	screen.fill (background)
+
 	global board, selected, possible_moves
 	screen.fill (background)
 
@@ -108,11 +110,11 @@ def draw_board ():
 			else:
 				pygame.draw.rect (screen, black, rect)
 
+			# selected tile and previous move
 			if selected == [i, j] or prev_pos == [i, j] or act_pos == [i, j]:
-				# selected tile
 				screen.blit (selected_surface, rect[:2])
+			# pieces
 			if (selected != [i, j] or not mouse_is_down) and board[i][j]:
-				# piece
 				screen.blit (pieces[board[i][j]], rect)
 
 	# coord
@@ -170,11 +172,35 @@ def draw_board ():
 		else:
 			screen.blit (small_pieces[BLACK][sub_coord], ((grid_x * 100 + sub_x * 50, grid_y * 100 + sub_y * 50)))
 
+	pygame.display.flip ()
+
 
 def move_piece (fr, to, promotion):
 	global board, prev_pos, act_pos, possible_moves
 	if COORD (to) in possible_moves:
+		# player move
 		eaten = move_piece_remote (fr, to, promotion)
+		if eaten:
+			if eaten == "O":
+				if to[1] == fr[1] + 2:
+					board[fr[0]][fr[1] + 1] = board[fr[0]][fr[1] + 3]
+					board[fr[0]][fr[1] + 3] = 0
+				else:
+					board[fr[0]][fr[1] - 1] = board[fr[0]][fr[1] - 4]
+					board[fr[0]][fr[1] - 4] = 0
+			else:
+				board[eaten[0]][eaten[1]] = 0
+		board[to[0]][to[1]] = board[fr[0]][fr[1]]
+		board[fr[0]][fr[1]] = 0
+		if promotion is not None:
+			board[to[0]][to[1]] = board[to[0]][to[1]] & ~0b11111 | promote[promotion]
+		prev_pos = fr
+		act_pos = to
+		possible_moves = set ()
+		draw_board ()
+
+		# computer move
+		fr, to, eaten = auto_move ()
 		if eaten:
 			if eaten == "O":
 				if to[1] == fr[1] + 2:
@@ -255,11 +281,7 @@ while running:
 		elif event.type == pygame.MOUSEBUTTONUP:
 			handle_mouse_up ()
 
-	screen.fill (background)
-
 	draw_board ()
 
-
-	pygame.display.flip ()
-
 pygame.quit ()
+r.terminate ()

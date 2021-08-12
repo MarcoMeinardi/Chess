@@ -26,7 +26,6 @@ using namespace std;
 #define LEFT_DOWN	LEFT  + DOWN
 #define LEFT_UP		LEFT  + UP
 
-#define MAX_DEPTH 5
 #define INF 255
 
 const char values[33] = {0, 
@@ -90,8 +89,9 @@ public:
 	void human_move (string move);
 
 	int test ();
+	int test_auto ();
 
-	int get_best_move (int* best_move);
+	int get_best_move (int* best_move, int max_depth);
 	int mini (int depth, int alpha, int beta, int* best_move);
 	int maxi (int depth, int alpha, int beta, int* best_move);
 	Piece* simulate_move (int move);
