@@ -62,7 +62,13 @@ def move_piece_remote (fr, to, promotion):
 def auto_move ():
 	r.stdin.write ("A\n")
 	fr = SPLIT_COORD (int (r.stdout.readline()[:-1]))
-	to = SPLIT_COORD (int (r.stdout.readline()[:-1]))
+	to = int (r.stdout.readline()[:-1])
+	if to >> 8:
+		promotion = to >> 8
+		to &= 0xff
+	else:
+		promotion = None
+	to = SPLIT_COORD (to)
 
 	resp = r.stdout.readline ()[:-1]
 	if resp == "O":  # castle
@@ -81,6 +87,6 @@ def auto_move ():
 				print ("Black won")
 			
 	if eaten == -1:
-		return (fr, to, None)
+		return (fr, to, None, promotion)
 	else:
-		return (fr, to, SPLIT_COORD (eaten))
+		return (fr, to, SPLIT_COORD (eaten), promotion)
