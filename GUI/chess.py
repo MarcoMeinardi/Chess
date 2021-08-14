@@ -1,5 +1,9 @@
 #!/bin/python3
 
+flip_board = 0
+vs_computer = 1
+
+
 import pygame
 from communicator import *
 
@@ -92,8 +96,6 @@ board = [
 ]
 
 screen = pygame.display.set_mode ([1000, 1000])
-
-flip_board = 1
 
 selected = None
 prev_pos = None
@@ -229,6 +231,7 @@ def move (fr, to, eaten, promotion):
 
 def automatic_move ():
 	fr, to, eaten, promotion = auto_move ()
+	print (fr, to, eaten, promotion)
 	move (fr, to, eaten, promotion)
 
 def move_piece (fr, to, promotion):
@@ -239,7 +242,8 @@ def move_piece (fr, to, promotion):
 		move (fr, to, eaten, promotion)
 		draw_board ()
 		# computer move
-		automatic_move ()
+		if vs_computer:
+			automatic_move ()
 		return True
 	else:
 		return False
@@ -293,7 +297,7 @@ def handle_mouse_up ():
 	mouse_is_down = False
 
 running = True
-if flip_board:
+if flip_board and vs_computer:
 	automatic_move ()
 
 while running:

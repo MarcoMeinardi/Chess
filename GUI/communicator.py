@@ -18,6 +18,12 @@ SPLIT_COORD = lambda pos: [pos >> 3, pos & 0x7]
 GET_PIECE = lambda piece: piece & 0b11111
 
 promote = [QUEEN, ROOK, KNIGHT, BISHOP]
+computer_promotion = {
+	QUEEN:	0,
+	ROOK:	1,
+	KNIGHT:	2,
+	BISHOP:	3
+}
 
 def get_possible_moves (y, x):
 	pos = COORD ([y, x])
@@ -87,6 +93,6 @@ def auto_move ():
 				print ("Black won")
 			
 	if eaten == -1:
-		return (fr, to, None, promotion)
+		return (fr, to, None, computer_promotion.get (promotion, None))
 	else:
-		return (fr, to, SPLIT_COORD (eaten), promotion)
+		return (fr, to, SPLIT_COORD (eaten), computer_promotion.get (promotion, None))
