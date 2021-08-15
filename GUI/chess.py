@@ -1,7 +1,7 @@
 #!/bin/python3
 
 flip_board = 0
-vs_computer = 1
+vs_computer = 0
 
 
 import pygame
@@ -212,7 +212,7 @@ def draw_board ():
 def move (fr, to, eaten, promotion):
 	global board, prev_pos, act_pos, possible_moves
 	if eaten:
-		if eaten == "O":
+		if type (eaten) == str and eaten[0] == "O":
 			if to[1] == fr[1] + 2:
 				board[fr[0]][fr[1] + 1] = board[fr[0]][fr[1] + 3]
 				board[fr[0]][fr[1] + 3] = 0
@@ -231,18 +231,17 @@ def move (fr, to, eaten, promotion):
 
 def automatic_move ():
 	fr, to, eaten, promotion = auto_move ()
-	print (fr, to, eaten, promotion)
 	move (fr, to, eaten, promotion)
 
 def move_piece (fr, to, promotion):
 	global board, prev_pos, act_pos, possible_moves
 	if COORD (to) in possible_moves:
 		# player move
-		eaten = move_piece_remote (fr, to, promotion)
+		eaten, is_over = move_piece_remote (fr, to, promotion)
 		move (fr, to, eaten, promotion)
 		draw_board ()
 		# computer move
-		if vs_computer:
+		if vs_computer and not is_over:
 			automatic_move ()
 		return True
 	else:

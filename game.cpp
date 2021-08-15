@@ -954,7 +954,16 @@ string Game::move_piece_GUI (int from, int to) {
 	// castle
 	if (board[from]->get_type () == KING && (X (to) == X (from) + 2 || X (to) == X (from) - 2)) {
 		move_piece (from, to);
-		return "O";
+		if (!is_draw && !is_checkmate) {
+			load_moves (moves);
+		}
+		if (is_draw) {
+			return "OD";
+		} else if (is_checkmate) {
+			return string ("OC") + (turn == WHITE ? "B" : "W");
+		} else {
+			return "O";
+		}
 	}
 	// en passant
 	int eaten = -1;

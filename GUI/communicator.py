@@ -37,6 +37,8 @@ def get_possible_moves (y, x):
 	return moves
 
 def move_piece_remote (fr, to, promotion):
+	is_over = False
+
 	fr = COORD (fr)
 	to = COORD (to)
 	r.stdin.write ("M\n")
@@ -46,14 +48,28 @@ def move_piece_remote (fr, to, promotion):
 		r.stdin.write (f"{fr} {to}\n")
 
 	resp = r.stdout.readline ()[:-1]
-	if resp == "O":  # castle
-		return resp
+	if resp[0] == "O":  # castle
+		if len (resp) == 1:
+			return resp, False
+		if resp[1] == "D":
+			print ("Draw")
+		else:
+			is_over = True
+			print ("Checkmate")
+			if resp[2] == "W":
+				print ("White won")
+			else:
+				print ("Black won")
+		return resp, True
+
 	resp = resp.split ()
 	eaten = int (resp[0])
 	if len (resp) != 1:
 		if resp[1] == "D":
+			is_over = True
 			print ("Draw")
 		else:
+			is_over = True
 			print ("Checkmate")
 			if resp[1][1] == "W":
 				print ("White won")
@@ -61,9 +77,9 @@ def move_piece_remote (fr, to, promotion):
 				print ("Black won")
 			
 	if eaten == -1:
-		return None
+		return None, is_over
 	else:
-		return SPLIT_COORD (eaten)
+		return SPLIT_COORD (eaten), is_over
 
 def auto_move ():
 	r.stdin.write ("A\n")
@@ -78,7 +94,7 @@ def auto_move ():
 
 	resp = r.stdout.readline ()[:-1]
 	if resp == "O":  # castle
-		return (fr, to, resp)
+		return (fr, to, resp, None)
 
 	resp = resp.split ()
 	eaten = int (resp[0])
