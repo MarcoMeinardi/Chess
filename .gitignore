@@ -1,4 +1,5 @@
 .vscode
 chess
-test/test
+test/random_test
+test/auto_vs_auto
 GUI/__pycache__/

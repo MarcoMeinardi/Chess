@@ -49,7 +49,7 @@ Game::Game () {
 Game::~Game () {
 	for (int i = 0; i < 64; i++) {
 		if (board[i]) {
-			free (board[i]);
+			delete board[i];
 		}
 	}
 }

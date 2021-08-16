@@ -3,15 +3,15 @@
 echo Random test
 echo 
 echo Compiling...
-g++ -Wall -o test test.cpp ../game.cpp -O3 -finline-functions -flto -march=native
+g++ -Wall -o random_test random_test.cpp ../game.cpp -O3 -finline-functions -flto -march=native
 
 echo 
 echo Start test
 echo 
-time ./test
+time ./random_test
 echo 
 echo Done
-rm test
+rm random_test
 
 echo
 echo ------------------------

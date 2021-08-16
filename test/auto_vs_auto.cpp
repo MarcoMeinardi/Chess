@@ -24,7 +24,7 @@ int main () {
 
 		game = new Game ();
 		int res = game->test_auto ();
-		free (game);
+		delete game;
 		int cnt = res & ~(7 << 29);
 		bool last_turn = res & (1 << 29);
 		bool is_checkmate = res & (1 << 30);
