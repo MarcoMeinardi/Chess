@@ -1,6 +1,6 @@
 #!/bin/python3
 
-flip_board = 0
+flip_board = 1
 vs_computer = 0
 
 
@@ -104,22 +104,6 @@ mouse_is_down = False
 possible_moves = set ()
 
 
-def get_row (i):
-	if flip_board:
-		return chr (ord ('1') + i)
-	else:
-		return chr (ord ('8') - i)
-def y_grid_to_coord (y):
-	if flip_board:
-		return 100 * (1 + y)
-	else:
-		return 100 * (8 - y)
-def y_coord_to_grid (y):
-	if flip_board:
-		return (y // 100) - 1
-	else:
-		return 8 - (y // 100)
-
 def draw_board ():
 	screen.fill (background)
 
@@ -128,12 +112,16 @@ def draw_board ():
 
 	for i in range (8):
 		for j in range (8):
-			rect = (100 * (j + 1), 100 * (i + 1 if flip_board else 8 - i), 100, 100)
-			# tile
-			if (i + j) % 2 != flip_board:
-				pygame.draw.rect (screen, white, rect)
+			if flip_board:
+				rect = (100 * (8 - j), 100 * (i + 1), 100, 100)
 			else:
+				rect = (100 * (j + 1), 100 * (8 - i), 100, 100)
+
+			# tile
+			if (i + j) % 2 == 0:
 				pygame.draw.rect (screen, black, rect)
+			else:
+				pygame.draw.rect (screen, white, rect)
 
 			# selected tile and previous move
 			if selected == [i, j] or prev_pos == [i, j] or act_pos == [i, j]:
@@ -146,7 +134,7 @@ def draw_board ():
 	for i in range (8):
 			screen.blit (
 				font.render (
-					get_row (i),
+					chr (ord ('1') + i) if flip_board else chr (ord ('8') - i),
 					False, 
 					black if i % 2 == 0 else white),
 				(105, 100 * (i + 1) + 5)
@@ -154,7 +142,7 @@ def draw_board ():
 	for i in range (8):
 		screen.blit (
 			font.render (
-				chr (ord ('a') + i), 
+				chr (ord ('h') - i) if flip_board else chr (ord ('a') + i),
 				False, 
 				black if i % 2 != 0 else white), 
 			(100 * (i + 1) + 85, 875)
@@ -166,8 +154,8 @@ def draw_board ():
 		if GET_PIECE (board[selected[0]][selected[1]]) != PAWN or (y != 0 and y != 7):
 			screen.blit (
 				possible_eat_surface if board[y][x] else possible_move_surface, 
-				(100 * (x + 1), 
-				y_grid_to_coord (y), 
+				(100 * (8 - x) if flip_board else 100 * (1 + x), 
+				100 * (1 + y) if flip_board else 100 * (8 - y), 
 				100, 100)
 			)
 
@@ -188,8 +176,8 @@ def draw_board ():
 			shown_promotion.add (move)
 			screen.blit (
 				black_promotion if y == 0 else white_promotion, 
-				(100 * (x + 1), 
-				y_grid_to_coord (y), 
+				(100 * (8 - x) if flip_board else 100 * (1 + x), 
+				100 * (1 + y) if flip_board else 100 * (8 - y), 
 				100, 100)
 			)
 			
@@ -197,15 +185,21 @@ def draw_board ():
 	x, y = pygame.mouse.get_pos ()
 	grid_y = y // 100
 	grid_x = x // 100
-	if COORD ([grid_y - 1 if flip_board else 8 - grid_y, grid_x - 1]) in shown_promotion:
+	if COORD ([grid_y - 1 if flip_board else 8 - grid_y, 8 - grid_x if flip_board else grid_x - 1]) in shown_promotion:
 		sub_y = (y - grid_y * 100) // 50
 		sub_x = (x - grid_x * 100) // 50
 		sub_coord = sub_y * 2 + sub_x
 
-		screen.blit (
-			small_pieces[WHITE if grid_y != flip_board else BLACK][sub_coord], 
-			((grid_x * 100 + sub_x * 50, grid_y * 100 + sub_y * 50))
-		)
+		if flip_board:
+			screen.blit (
+				small_pieces[WHITE if grid_y == 8 else BLACK][sub_coord], 
+				((grid_x * 100 + sub_x * 50, grid_y * 100 + sub_y * 50))
+			)
+		else:
+			screen.blit (
+				small_pieces[WHITE if grid_y == 1 else BLACK][sub_coord], 
+				((grid_x * 100 + sub_x * 50, grid_y * 100 + sub_y * 50))
+			)
 
 	pygame.display.flip ()
 
@@ -253,8 +247,8 @@ def handle_mouse_down ():
 	sub_y = (y - (y // 100 * 100)) // 50
 	sub_x = (x - (x // 100 * 100)) // 50
 	promotion = sub_y * 2 + sub_x
-	x = (x // 100) - 1
-	y = y_coord_to_grid (y)
+	x = 8 - (x // 100) if flip_board else (x // 100) - 1
+	y = (y // 100) - 1 if flip_board else 8 - (y // 100)
 	if selected is not None and (GET_PIECE (board[selected[0]][selected[1]]) != PAWN or (y != 0 and y != 7)):
 		promotion = None
 	if 0 <= x < 8 and 0 <= y < 8:
@@ -281,8 +275,8 @@ def handle_mouse_up ():
 	sub_y = (y - (y // 100 * 100)) // 50
 	sub_x = (x - (x // 100 * 100)) // 50
 	promotion = sub_y * 2 + sub_x
-	x = (x // 100) - 1
-	y = y_coord_to_grid (y)
+	x = 8 - (x // 100) if flip_board else (x // 100) - 1
+	y = (y // 100) - 1 if flip_board else 8 - (y // 100)
 	if selected is not None and (GET_PIECE (board[selected[0]][selected[1]]) != PAWN or (y != 0 and y != 7)):
 		promotion = None
 	if selected is not None and board[selected[0]][selected[1]]:
