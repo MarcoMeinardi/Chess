@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <cstdlib>
-#include <algorithm>
 using namespace std;
 
 #include "./piece.h"
@@ -60,6 +59,8 @@ private:
 
 	Piece* kings[2];
 
+	int score;
+
 public:
 
 	Game ();
@@ -96,5 +97,6 @@ public:
 	int maxi (int depth, int alpha, int beta, int* best_move);
 	Piece* simulate_move (int move);
 	void undo_simulated_move (int move, Piece* eaten);
+	void random_shuffle (int* moves, int n_moves);
 };
 

@@ -45,6 +45,8 @@ Game::Game () {
 
 	kings[WHITE] = board [COORD (0, 4)];
 	kings[BLACK] = board [COORD (7, 4)];
+
+	score = 0;
 }
 Game::~Game () {
 	for (int i = 0; i < 64; i++) {
@@ -86,10 +88,20 @@ void Game::move_piece (int from, int to) {
 		free (board[(from & 0b111000) | X (to)]);	// COORD (Y(from), X (to))
 		board[(from & 0b111000) | X (to)] = nullptr;
 		remaining_pieces[turn]--;
+		if (turn == BLACK) {
+			score += values[PAWN];
+		} else {
+			score -= values[PAWN];
+		}
 	} else 
 	// promotion
 	if (GET_PROMOTION (to)) {
 		board[from]->promote (GET_PROMOTION (to));
+		if (turn == BLACK) {
+			score += values[GET_PROMOTION (to)] - 1;
+		} else {
+			score -= values[GET_PROMOTION (to)] - 1;
+		}
 	}
 
 	to = CUT_PROMOTION (to);
@@ -100,6 +112,11 @@ void Game::move_piece (int from, int to) {
 	}
 
 	if (board[to]) {
+		if (turn == BLACK) {
+			score += values[board[to]->get_type ()];
+		} else {
+			score -= values[board[to]->get_type ()];
+		}
 		free (board[to]);
 		moves_without_take_or_pawn_move = 0;
 		remaining_pieces[turn]--;
@@ -1118,8 +1135,7 @@ int Game::get_best_move (int* best_move, int max_depth) {
 }
 int Game::mini (int depth, int alpha, int beta, int* best_move) {
 	if (!depth) {
-		// return evaluate score
-		return 0;
+		return score;
 	}
 
 	int moves[128];
@@ -1130,7 +1146,7 @@ int Game::mini (int depth, int alpha, int beta, int* best_move) {
 	} else if (is_draw) {
 		return 0;
 	}
-	random_shuffle (moves, moves + n_moves);	// in the beginning the predicted score is zero so he just make the first available move
+	random_shuffle (moves, n_moves);	// in the beginning the predicted score is zero so he just make the first available move
 
 	int best_score = INF * 2;
 	int actual_score;
@@ -1141,28 +1157,18 @@ int Game::mini (int depth, int alpha, int beta, int* best_move) {
 	int prev_last_moved = last_moved;
 	bool was_first_double_move;
 	bool had_moved;
-	int previous_type;	// promotion score
 
 	for (int i = 0; i < n_moves; i++) {
 		// simulate move
 		moved = board[moves[i] & 0xff];	// from
 		was_first_double_move = moved->can_be_en_passant ();
 		had_moved = !moved->is_first_move ();
-		previous_type = moved->get_type ();
 		eaten = simulate_move (moves[i]);
-		if (eaten) {
-			actual_score = -values[eaten->get_type ()];
-		} else {
-			actual_score = 0;
-		}
-		if (previous_type == PAWN && moved->get_type () != PAWN) {
-			actual_score -= values[moved->get_type ()] - 1;
-		}
 
 		if (is_draw) {
 			actual_score = 0;
 		} else {
-			actual_score += maxi (depth - 1, alpha, beta, nullptr);
+			actual_score = maxi (depth - 1, alpha, beta, nullptr);
 		}
 		if (actual_score < best_score) {
 			best_score = actual_score;
@@ -1200,8 +1206,7 @@ int Game::mini (int depth, int alpha, int beta, int* best_move) {
 }
 int Game::maxi (int depth, int alpha, int beta, int* best_move) {
 	if (!depth) {
-		// return evaluate score
-		return 0;
+		return score;
 	}
 
 	int moves[128];
@@ -1212,7 +1217,7 @@ int Game::maxi (int depth, int alpha, int beta, int* best_move) {
 	} else if (is_draw) {
 		return 0;
 	}
-	random_shuffle (moves, moves + n_moves);	// in the beginning the predicted score is zero so he just make the first available move
+	random_shuffle (moves, n_moves);	// in the beginning the predicted score is zero so he just make the first available move
 
 	int best_score = -INF * 2;
 	int actual_score;
@@ -1223,28 +1228,18 @@ int Game::maxi (int depth, int alpha, int beta, int* best_move) {
 	int prev_last_moved = last_moved;
 	bool was_first_double_move;
 	bool had_moved;
-	int previous_type;	// promotion score
 
 	for (int i = 0; i < n_moves; i++) {
 		// simulate move
 		moved = board[moves[i] & 0xff];	// from
 		was_first_double_move = moved->can_be_en_passant ();
 		had_moved = !moved->is_first_move ();
-		previous_type = moved->get_type ();
 		eaten = simulate_move (moves[i]);
-		if (eaten) {
-			actual_score = values[eaten->get_type ()];
-		} else {
-			actual_score = 0;
-		}
-		if (previous_type == PAWN && moved->get_type () != PAWN) {
-			actual_score += values[moved->get_type ()] - 1;
-		}
 
 		if (is_draw) {
 			actual_score = 0;
 		} else {
-			actual_score += mini (depth - 1, alpha, beta, nullptr);
+			actual_score = mini (depth - 1, alpha, beta, nullptr);
 		}
 		if (actual_score > best_score) {
 			best_score = actual_score;
@@ -1314,10 +1309,20 @@ Piece* Game::simulate_move (int move) {
 		eaten = board[(from & 0b111000) | X (to)];
 		board[(from & 0b111000) | X (to)] = nullptr;
 		remaining_pieces[turn]--;
+		if (turn == BLACK) {
+			score += values[PAWN];
+		} else {
+			score -= values[PAWN];
+		}
 	} else 
 	// promotion
 	if (GET_PROMOTION (to)) {
 		board[from]->promote (GET_PROMOTION (to));
+		if (turn == BLACK) {
+			score += values[GET_PROMOTION (to)] - 1;
+		} else {
+			score -= values[GET_PROMOTION (to)] - 1;
+		}
 	}
 
 	to = CUT_PROMOTION (to);
@@ -1329,6 +1334,11 @@ Piece* Game::simulate_move (int move) {
 
 	if (board[to]) {
 		eaten = board[to];
+		if (turn == BLACK) {
+			score += values[eaten->get_type ()];
+		} else {
+			score -= values[eaten->get_type ()];
+		}
 		moves_without_take_or_pawn_move = 0;
 		remaining_pieces[turn]--;
 		check_draw ();
@@ -1380,6 +1390,11 @@ void Game::undo_simulated_move (int move, Piece* eaten) {
 	// promotion
 	if (GET_PROMOTION (to)) {
 		board[CUT_PROMOTION (to)]->undo_promote ();
+		if (turn == WHITE) {
+			score += values[GET_PROMOTION (to)] - 1;
+		} else {
+			score -= values[GET_PROMOTION (to)] - 1;
+		}
 	}
 
 	to = CUT_PROMOTION (to);
@@ -1389,6 +1404,11 @@ void Game::undo_simulated_move (int move, Piece* eaten) {
 	board[to] = nullptr;
 
 	if (eaten) {
+		if (turn == WHITE) {
+			score += values[eaten->get_type ()];
+		} else {
+			score -= values[eaten->get_type ()];
+		}
 		remaining_pieces[turn]++;
 		board[eaten->get_pos ()] = eaten;
 	}
@@ -1396,4 +1416,15 @@ void Game::undo_simulated_move (int move, Piece* eaten) {
 	turn = !turn;
 	is_checkmate = false;
 	is_draw = false;
+}
+
+void Game::random_shuffle (int* moves, int n_moves) {
+	int r;
+	int c;
+	for (int i = 0; i < n_moves; i++) {
+		r = rand() % n_moves;
+		c = moves[i];
+		moves[i] = moves[r];
+		moves[r] = c;
+	}
 }
